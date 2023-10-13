@@ -1,0 +1,27 @@
+server:
+  port: 8088
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://101.43.202.84:3306/academicplatform
+    username: root
+    password: mczzy
+  data:
+    redis:
+      host: 101.43.202.84
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: 100ms
+      password: mczzy
+  mail:
+    host: smtp.qq.com
+    username: 1274975655@qq.com
+    password: lwrlnvplixlkfegd
+    port: 587
+    default-encoding: UTF-8
