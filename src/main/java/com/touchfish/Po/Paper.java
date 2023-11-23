@@ -24,7 +24,7 @@ public class Paper {
     @TableField("abstract")
     private String Abstract;
     private Integer cited_by_count;
-    private String  oa_url;
+    private String oa_url;
     private String doi;
     private String publication_date;
     private String type;
@@ -34,6 +34,5 @@ public class Paper {
     private List<String> referenced_works;
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> related_works;
-
 
 }
