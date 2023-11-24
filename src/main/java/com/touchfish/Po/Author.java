@@ -15,7 +15,7 @@ import java.util.List;
 @TableName(value = "author", autoResultMap = true)
 public class Author {
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private String id;
     private String display_name;
     private Integer works_count;
     private Integer cited_by_count;
