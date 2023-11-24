@@ -9,7 +9,7 @@ import com.touchfish.MiddleClass.Institution;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @TableName(value = "author", autoResultMap = true)
@@ -22,7 +22,7 @@ public class Author {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Institution last_known_institution;
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private ArrayList<String> fields;
+    private List<String> fields;
     private Integer h_index;
     private Integer claim_uid;
     private LocalDateTime updated_date;
