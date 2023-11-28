@@ -8,6 +8,8 @@ import com.touchfish.Po.User;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.*;
 import io.lettuce.core.ScriptOutputType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
+@Tag(name = "用户相关接口")
 public class UserController {
 
     @Autowired
@@ -32,6 +35,7 @@ public class UserController {
 
     @LoginCheck
     @PostMapping("/sendCaptcha")
+    @Operation(summary = "发送验证码")
     public Result registerSendCaptcha(@RequestBody String email){ //注册时发送邮箱验证码
 //        if (!RegexUtil.isValidEmail(email)) return Result.fail("邮箱不合法");
 //        User now = UserContext.getUser();
@@ -42,6 +46,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "注册")
     public Result registerConfirm(@RequestBody RegisterInfo registerInfo){ //完成注册
         if (user.lambdaQuery().eq(User::getEmail,registerInfo.getEmail()).count()>0){
             return Result.fail("邮箱已存在");
@@ -60,6 +65,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "登录")
     public Result login(@RequestBody LoginInfo loginInfo){
         User myUser = user.lambdaQuery().eq(User::getUsername,loginInfo.getUsername()).one();
         if (!myUser.getPassword().equals(loginInfo.getPassword())){
