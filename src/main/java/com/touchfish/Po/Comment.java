@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("comment")
-@AllArgsConstructor
+//@AllArgsConstructor
 @NoArgsConstructor
 public class Comment {
     @TableId(type = IdType.AUTO)
@@ -23,18 +23,30 @@ public class Comment {
     private LocalDateTime send_time;
     private Integer receiver_id;     //被回复的评论的id，可以为null
 
-    public Comment(String content, String paper_id, Integer send_id, LocalDateTime send_time) {
+//    public Comment(String content, String paper_id, Integer send_id, LocalDateTime send_time) {
+//        this.content = content;
+//        this.paper_id = paper_id;
+//        this.sender_id = send_id;
+//        this.send_time = send_time;
+//    }
+//
+//    public Comment(String content, String paper_id, Integer send_id, LocalDateTime send_time, Integer receiver_id) {
+//        this.content = content;
+//        this.paper_id = paper_id;
+//        this.sender_id = send_id;
+//        this.send_time = send_time;
+//        this.receiver_id = receiver_id;
+//    }
+    public Comment(String content, String paper_id, Integer send_id) {
         this.content = content;
         this.paper_id = paper_id;
         this.sender_id = send_id;
-        this.send_time = send_time;
     }
 
-    public Comment(String content, String paper_id, Integer send_id, LocalDateTime send_time, Integer receiver_id) {
+    public Comment(String content, String paper_id, Integer send_id, Integer receiver_id) {
         this.content = content;
         this.paper_id = paper_id;
         this.sender_id = send_id;
-        this.send_time = send_time;
         this.receiver_id = receiver_id;
     }
 
