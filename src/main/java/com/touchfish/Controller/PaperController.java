@@ -25,4 +25,6 @@ public class PaperController {
         Paper one = paper.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         return Result.ok("200",one);
     }
+
+
 }
