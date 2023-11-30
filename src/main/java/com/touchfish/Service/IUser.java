@@ -4,4 +4,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.touchfish.Po.User;
 
 public interface IUser extends IService<User> {
+    public Integer sendCaptcha(String email);
+
 }

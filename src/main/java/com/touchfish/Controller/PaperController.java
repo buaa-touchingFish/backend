@@ -5,6 +5,7 @@ import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.Result;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -25,7 +26,7 @@ public class PaperController {
 
     @GetMapping ("/single")
     @Operation(summary = "getSingleWork")
-    public Result getSingleWork(@RequestBody Map<String,String> json){
+    public Result<Paper> getSingleWork(  @RequestBody  Map<String,String> json){
         Paper one = paper.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         return Result.ok("200",one);
     }

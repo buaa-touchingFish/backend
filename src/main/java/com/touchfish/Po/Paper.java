@@ -35,5 +35,4 @@ public class Paper {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> related_works;
 
-
 }
