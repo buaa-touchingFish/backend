@@ -5,10 +5,10 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Result<T> {
+public class Result<R> {
     private Integer code;
     private String message;
-    private T data;
+    private R data;
 
     public static<T> Result<T> ok(String message,T data){
         return new Result<T>(200,message,data);
