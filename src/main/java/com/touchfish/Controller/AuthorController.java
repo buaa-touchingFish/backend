@@ -32,7 +32,7 @@ public class AuthorController {
 //    }
 
     @GetMapping
-    public Result getAuthor(@RequestBody Map<String, String> map) {
+    public Result<Author> getAuthor(@RequestBody Map<String, String> map) {
         String author_id = map.get("author_id");
         Author author = authorService.getById(author_id);
         if(author == null)

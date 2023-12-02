@@ -17,7 +17,7 @@ public class CommentController {
     private CommentImpl commentService;
 
     @PostMapping
-    public Result save(@RequestBody Map<String, String> map) {
+    public Result<String> save(@RequestBody Map<String, String> map) {
         String content = map.get("content");
         String paper_id = map.get("paper_id");
         Integer sender_id = Integer.parseInt(map.get("sender_id"));
@@ -33,7 +33,7 @@ public class CommentController {
     }
 
     @GetMapping
-    public Result getCommentByPaper(@RequestBody Map<String, String> map) {
+    public Result<List<Comment>> getCommentByPaper(@RequestBody Map<String, String> map) {
         String paper_id = map.get("paper_id");
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
         return Result.ok("获取评论列表成功", list);

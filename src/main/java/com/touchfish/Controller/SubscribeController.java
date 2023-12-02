@@ -15,7 +15,7 @@ public class SubscribeController {
     private SubscribeImpl subscribeService;
 
     @PostMapping
-    public Result save(@RequestBody Map<String, String> map) {
+    public Result<String> save(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String author_id = map.get("author_id");
         if(subscribeService.saveSubscribe(user_id, author_id))
@@ -25,7 +25,7 @@ public class SubscribeController {
     }
 
     @DeleteMapping
-    public Result delete(@RequestBody Map<String, String> map) {
+    public Result<String> delete(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String author_id = map.get("author_id");
         if(subscribeService.deleteSubscribe(user_id, author_id))
@@ -35,7 +35,7 @@ public class SubscribeController {
     }
 
     @GetMapping
-    public Result getAuthorByUser(@RequestBody Map<String, String> map) {
+    public Result<ArrayList<String>> getAuthorByUser(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         ArrayList<String> subscribes = subscribeService.getSubscribes(user_id);
         return Result.ok("获取关注列表成功", subscribes);

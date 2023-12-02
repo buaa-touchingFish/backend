@@ -15,7 +15,7 @@ public class CollectController {
     private CollectImpl collectService;
 
     @PostMapping
-    public Result save(@RequestBody Map<String, String> map) {
+    public Result<String> save(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.saveCollect(user_id, paper_id))
@@ -25,7 +25,7 @@ public class CollectController {
     }
 
     @DeleteMapping
-    public Result delete(@RequestBody Map<String, String> map) {
+    public Result<String> delete(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.deleteCollect(user_id, paper_id))
@@ -35,7 +35,7 @@ public class CollectController {
     }
 
     @GetMapping
-    public Result getPaperByUser(@RequestBody Map<String, String> map) {
+    public Result<ArrayList<String>> getPaperByUser(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         ArrayList<String> collects = collectService.getCollects(user_id);
         return Result.ok("获取收藏列表成功", collects);
