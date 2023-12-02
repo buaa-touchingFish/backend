@@ -5,22 +5,22 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Result {
+public class Result<R> {
     private Integer code;
     private String message;
-    private Object data;
+    private R data;
 
-    public static Result ok(String message,Object data){
-        return new Result(200,message,data);
+    public static<T> Result<T> ok(String message,T data){
+        return new Result<T>(200,message,data);
     }
 
-    public static Result ok(String message){
-        return new Result(200,message,null);
+    public static<T> Result<T> ok(String message){
+        return new Result<T>(200,message,null);
     }
 
-    public static Result fail(String message){
-        return new Result(400,message,null);
+    public static<T> Result<T> fail(String message){
+        return new Result<T>(400,message,null);
     }
 
-    public static Result fail(String message,Integer code) {return  new Result(code,message,null);}
+    public static<T> Result<T> fail(String message,Integer code) {return  new Result<T>(code,message,null);}
 }
