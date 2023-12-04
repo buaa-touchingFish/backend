@@ -25,6 +25,11 @@ spring:
     password: lwrlnvplixlkfegd
     port: 587
     default-encoding: UTF-8
+  elasticsearch:
+    uris: http://140.143.163.141:9200
+    username: elastic
+    password: lzh110819980
+
 
 mybatis-plus:
   configuration:

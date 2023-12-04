@@ -1,6 +1,8 @@
 package com.touchfish.Controller;
 
+import com.touchfish.Dao.ElasticSearchRepository;
 import com.touchfish.Po.Paper;
+import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.Result;
 
@@ -9,9 +11,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,6 +25,8 @@ public class PaperController {
 
     @Autowired
     private PaperImpl paper;
+    @Autowired
+    private ElasticSearchRepository es;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -33,4 +39,19 @@ public class PaperController {
         return Result.ok("200",one);
     }
 
+    @GetMapping("/title")
+    @Operation(summary = "获取文献")
+    public Result<PaperDoc> getWork(){
+        PaperDoc paperDoc=paper.findByTitle("Extrapolation and bubbles");
+        System.out.println(paperDoc);
+        return Result.ok("200",paperDoc);
+    }
+    @GetMapping("/abstract")
+    public Result<List<PaperDoc>> getAbstract(){
+        List<SearchHit<PaperDoc>>paper1=paper.findByAbstract("computer");
+        for(SearchHit<PaperDoc> paperDocSearchHit:paper1){
+            System.out.println(paperDocSearchHit.getContent());
+        }
+        return Result.ok("200");
+    }
 }
