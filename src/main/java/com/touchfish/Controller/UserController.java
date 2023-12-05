@@ -20,13 +20,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -39,7 +35,7 @@ public class UserController {
     @Autowired
     private  Captcha captcha ;
     @Autowired
-    private UserImpl user ;
+    private UserImpl user;
 
 
 
@@ -88,7 +84,7 @@ public class UserController {
         String jwtToken = JWT.generateJwtToken(name);
         String jsonstr = JSONUtil.toJsonStr(myUser);
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
-        return Result.ok("登陆成功",jwtToken);
+        return Result.ok("登录成功",jwtToken);
     }
 
     @PostMapping("/findpwd")

@@ -20,7 +20,7 @@ import java.util.Map;
 public class PaperController {
 
     @Autowired
-    PaperImpl paper;
+    private PaperImpl paper;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;

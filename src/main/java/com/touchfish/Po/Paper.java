@@ -24,7 +24,7 @@ public class Paper {
     @TableField("abstract")
     private String Abstract;
     private Integer cited_by_count;
-    private String  oa_url;
+    private String oa_url;
     private String doi;
     private String publication_date;
     private String type;

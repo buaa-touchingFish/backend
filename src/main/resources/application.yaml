@@ -25,6 +25,8 @@ spring:
     password: lwrlnvplixlkfegd
     port: 587
     default-encoding: UTF-8
+
 mybatis-plus:
   configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: false
