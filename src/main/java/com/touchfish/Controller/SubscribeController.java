@@ -38,6 +38,6 @@ public class SubscribeController {
     public Result<ArrayList<String>> getAuthorByUser(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         ArrayList<String> subscribes = subscribeService.getSubscribes(user_id);
-        return Result.ok("获取关注列表成功", subscribes);
+        return Result.ok("获取订阅列表成功", subscribes);
     }
 }
