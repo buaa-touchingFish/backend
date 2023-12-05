@@ -4,6 +4,7 @@ package com.touchfish.Controller;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.touchfish.Dto.ClaimInfo;
 import com.touchfish.Dto.LoginInfo;
 import com.touchfish.Dto.PwdChangeInfo;
 import com.touchfish.Dto.RegisterInfo;
@@ -14,6 +15,7 @@ import io.lettuce.core.ScriptOutputType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties;
@@ -65,7 +67,7 @@ public class UserController {
         if (!captcha.equals(registerInfo.getCaptcha())){
             return Result.fail("验证码错误");
         }
-        User newUser = new User(registerInfo.getUsername(),registerInfo.getPassword(),registerInfo.getEmail(),0);
+        User newUser = new User(registerInfo.getUsername(),registerInfo.getPassword(),registerInfo.getEmail(),null);
 
         user.save(newUser);
         return Result.ok("注册成功");
@@ -118,6 +120,46 @@ public class UserController {
         if (update)  return Result.ok("成功修改密码");
         else return Result.fail("修改密码失败");
     }
+
+    @PostMapping("/clainpage1")
+    @LoginCheck
+    @Operation(summary = "认领学者门户发送邮箱",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱")
+    public Result<String>  claimHomePage1(@RequestBody ClaimInfo claimInfo){
+        User now_user = UserContext.getUser();
+        String email =  claimInfo.getEmail();
+        email = email.replace("\"","");
+        boolean isEmail = Validator.isEmail(email);
+        if (!isEmail|| !captcha.isValidClaim(email)) return  Result.fail("验证码格式错误");
+        Integer result = user.sendCaptcha(email);
+        if (result == 0){
+            return Result.ok("邮箱发送成功");
+        }else {
+            return Result.fail("邮箱发送失败");
+        }
+    }
+
+    @PostMapping("/clainpage2")
+    @LoginCheck
+    @Operation(summary = "认领学者门户确认邮箱",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码")
+    public Result<String>  claimHomePage2(@RequestBody ClaimInfo claimInfo){
+        User now_user = UserContext.getUser();
+        String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+claimInfo.getEmail());
+        if (StrUtil.isEmpty(captcha)){
+            return Result.fail("验证码已失效");
+        }
+        if (!captcha.equals(claimInfo.getCaptcha())){
+            return Result.fail("验证码错误");
+        }
+        boolean flag = user.lambdaUpdate().eq(User::getUsername, now_user.getUsername()).set(User::getAuthor_id, claimInfo.getAuthor_id()).update();
+        if (!flag){
+            return  Result.fail("数据库出错,更新数据失败");
+        }
+        //作者表要更新
+        return Result.ok("门户认领成功");
+    }
+
 
 }
 
