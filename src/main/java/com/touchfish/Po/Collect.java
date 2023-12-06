@@ -10,7 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
+import java.util.List;
+
 
 @Data
 @TableName(value = "collect", autoResultMap = true)
@@ -20,5 +21,5 @@ public class Collect {
     @TableId(type = IdType.INPUT)
     private Integer user_id;
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private ArrayList<CollectInfo> collectInfos;
+    private List<CollectInfo> collectInfos;
 }

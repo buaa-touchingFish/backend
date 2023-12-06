@@ -2,12 +2,14 @@ package com.touchfish.MiddleClass;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class CollectInfo {
     private String paper_id;
-    private HashSet<String> labels;
+    private LinkedHashSet<String> labels;
 }
