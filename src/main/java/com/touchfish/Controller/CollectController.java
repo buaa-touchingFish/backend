@@ -1,7 +1,9 @@
 package com.touchfish.Controller;
 
 import com.touchfish.MiddleClass.CollectInfo;
+import com.touchfish.Po.Label;
 import com.touchfish.Service.impl.CollectImpl;
+import com.touchfish.Service.impl.LabelImpl;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,8 @@ import java.util.Map;
 public class CollectController {
     @Autowired
     private CollectImpl collectService;
+    @Autowired
+    private LabelImpl labelService;
 
     @PostMapping
     @Operation(summary = "收藏文章")
@@ -57,9 +61,19 @@ public class CollectController {
     public Result<String> addLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
-        String label = map.get("label");
-        if (collectService.addLabel(user_id, paper_id, label))
+        String label_name = map.get("label_name");
+        if (collectService.addLabel(user_id, paper_id, label_name)) {
+            Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
+            if (label != null)
+            {
+                label.setCount(label.getCount()+1);
+                labelService.updateById(label);
+            }
+            else {
+                labelService.save(new Label(label_name, 1));
+            }
             return Result.ok("添加标签成功");
+        }
         else
             return Result.fail("已添加");
     }
@@ -70,11 +84,21 @@ public class CollectController {
     public Result<String> deleteLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
-        String label = map.get("label");
-        if (collectService.deleteLabel(user_id, paper_id, label))
+        String label_name = map.get("label_name");
+        if (collectService.deleteLabel(user_id, paper_id, label_name)) {
+            Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
+            label.setCount(label.getCount()-1);
+            labelService.updateById(label);
             return Result.ok("删除标签成功");
+        }
         else
             return Result.fail("未添加");
     }
 
+    @GetMapping("/label")
+    @Operation(summary = "获取标签列表")
+    public Result<List<Label>> getLabels() {
+        List<Label> labels = labelService.list();
+        return Result.ok("获取标签列表成功", labels);
+    }
 }
