@@ -50,5 +50,15 @@ public class Captcha {
         return codes;
     }
 
+    public boolean isValidClaim(String email){ //学者门户认领的时候判断是否是有效邮箱地址
+        String[] arr = email.split("@");
+        int len = arr.length;
+        String suffix = arr[len-1];
+        if (suffix.equals("163.com")||suffix.equals("vip.163.com")||suffix.equals("gmail.com")||suffix.equals("qq.com")||suffix.equals("126.com")||suffix.equals("vip.126.com")||suffix.equals("sohu.com")||suffix.equals("139.com")||suffix.equals("189.cn")||suffix.equals("189.com")||suffix.equals("sina.com")||suffix.equals("outlook.com")||suffix.equals("aliyun.com")||suffix.equals("hotmail.com")||suffix.equals("tom.com")||suffix.equals("sogou.com")||suffix.equals("2980.com")||suffix.equals("21cn.com")||suffix.equals("188.com")||suffix.equals("yeah.net")){
+            return  false;
+        }
+        return true;
+    }
+
 
 }

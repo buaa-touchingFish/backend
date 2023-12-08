@@ -8,5 +8,4 @@ public class RegisterInfo {
     String password;
     String email;
     String captcha;
-
 }

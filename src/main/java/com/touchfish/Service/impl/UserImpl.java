@@ -29,7 +29,7 @@ public class UserImpl extends ServiceImpl<UserMapper, User> implements IUser {
         boolean isEmail = Validator.isEmail(email);
         if (!isEmail) return 1;
         String code  = captcha.sendCaptcha(email);
-        stringRedisTemplate.opsForValue().set(RedisKey.CATPTCHA_KEY+email,code,5, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(RedisKey.CATPTCHA_KEY+email,code,3, TimeUnit.MINUTES);
         return 0;
     }
 
