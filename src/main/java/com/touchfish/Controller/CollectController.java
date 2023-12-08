@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/collect")
-@Tag(name =  "收藏相关接口")
+@Tag(name = "收藏相关接口")
 public class CollectController {
     @Autowired
     private CollectImpl collectService;
@@ -64,17 +64,14 @@ public class CollectController {
         String label_name = map.get("label_name");
         if (collectService.addLabel(user_id, paper_id, label_name)) {
             Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
-            if (label != null)
-            {
-                label.setCount(label.getCount()+1);
+            if (label != null) {
+                label.setCount(label.getCount() + 1);
                 labelService.updateById(label);
-            }
-            else {
+            } else {
                 labelService.save(new Label(label_name, 1));
             }
             return Result.ok("添加标签成功");
-        }
-        else
+        } else
             return Result.fail("已添加");
     }
 
@@ -87,11 +84,10 @@ public class CollectController {
         String label_name = map.get("label_name");
         if (collectService.deleteLabel(user_id, paper_id, label_name)) {
             Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
-            label.setCount(label.getCount()-1);
+            label.setCount(label.getCount() - 1);
             labelService.updateById(label);
             return Result.ok("删除标签成功");
-        }
-        else
+        } else
             return Result.fail("未添加");
     }
 
