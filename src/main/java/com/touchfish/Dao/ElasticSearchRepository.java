@@ -6,7 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Highlight;
 import org.springframework.data.elasticsearch.annotations.HighlightField;
 import org.springframework.data.elasticsearch.annotations.HighlightParameters;
+<<<<<<< Updated upstream
 import org.springframework.data.elasticsearch.client.erhlc.NativeSearchQueryBuilder;
+=======
+import org.springframework.data.elasticsearch.annotations.Query;
+>>>>>>> Stashed changes
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
@@ -28,7 +32,13 @@ public interface ElasticSearchRepository extends ElasticsearchRepository<PaperDo
     )
     //List<SearchHit<PaperDoc>> findByTitleOrContent(String title, String content);
     //List<SearchHit<PaperDoc>> findById(String id);
+<<<<<<< Updated upstream
     List<SearchHit<PaperDoc>> findByTitleContains(String title);
     Page<PaperDoc> findByAbstracts(String keyword, Pageable pageable);
     List<SearchHit<PaperDoc>> findByInformation(String content);
+=======
+    PaperDoc findByTitle(String title);
+    List<SearchHit<PaperDoc>> findByAbstracts(String keyword);
+
+>>>>>>> Stashed changes
 }
