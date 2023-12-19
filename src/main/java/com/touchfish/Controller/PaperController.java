@@ -38,7 +38,6 @@ public class PaperController {
         Paper one = paper.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         return Result.ok("200",one);
     }
-
     @GetMapping("/title")
     @Operation(summary = "获取文献")
     public Result<PaperDoc> getWork(){

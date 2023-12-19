@@ -13,7 +13,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.util.List;
-@Document(indexName = "works")
+@Document(indexName = "papers")
 @Data
 public class PaperDoc {
     @Id
@@ -26,16 +26,25 @@ public class PaperDoc {
     private List<String> keywords;
     @Field(name = "abstract",type = FieldType.Text)
     private String abstracts;
+    @Field(name = "cited_by_count",type = FieldType.Long)
     private Integer cited_by_count;
+    @Field(name = "oa_url",type = FieldType.Keyword)
     private String oa_url;
+    @Field(name = "doi",type = FieldType.Keyword)
     private String doi;
+    @Field(name = "publication_date",type = FieldType.Date)
     private String publication_date;
+    @Field(name = "publication_date",type = FieldType.Date)
+
     private String type;
+    @Field(name = "publisher",type = FieldType.Keyword)
+
     private String publisher;
     @Field(name = "referenced_works",type = FieldType.Text)
     private List<String> referenced_works;
     @Field(name="related_works",type = FieldType.Text)
     private List<String> related_works;
+
     @Override
     public String toString() {
         return "PaperDoc{" +
@@ -43,13 +52,13 @@ public class PaperDoc {
                 ", title='" + title + '\'' +
                 ", authorships=" + authorships +
                 ", keywords=" + keywords +
-                //", Abstract='" + Abstract + '\'' +
+                ", abstracts='" + abstracts + '\'' +
                 ", cited_by_count=" + cited_by_count +
                 ", oa_url='" + oa_url + '\'' +
                 ", doi='" + doi + '\'' +
                 ", publication_date='" + publication_date + '\'' +
                 ", type='" + type + '\'' +
-                ", publisher=" + publisher +
+                ", publisher='" + publisher + '\'' +
                 ", referenced_works=" + referenced_works +
                 ", related_works=" + related_works +
                 '}';
