@@ -18,35 +18,30 @@ import java.util.List;
 public class PaperDoc {
     @Id
     private String id;
-    @Field(name = "title")
+    @Field(name = "title",type =FieldType.Text)
     private String title;
-    @Field(name = "authorships",type = FieldType.Text)
-    private List<AuthorShip> authorships;
-    @Field(name = "keywords",type =FieldType.Text)
-    private List<String> keywords;
+    @Field(name = "authorships",type =FieldType.Text)
+
+    private String authorships;
+    private String keywords;
     @Field(name = "abstract",type = FieldType.Text)
     private String abstracts;
-    @Field(name = "cited_by_count",type = FieldType.Long)
     private Integer cited_by_count;
-    @Field(name = "oa_url",type = FieldType.Keyword)
     private String oa_url;
-    @Field(name = "doi",type = FieldType.Keyword)
     private String doi;
-    @Field(name = "publication_date",type = FieldType.Date)
+    @Field(name="publication_date",type = FieldType.Date)
     private String publication_date;
-    @Field(name = "type",type = FieldType.Keyword)
 
     private String type;
-    @Field(name = "publisher",type = FieldType.Keyword)
 
     private String publisher;
-    @Field(name = "referenced_works",type = FieldType.Text)
-    private List<String> referenced_works;
-    @Field(name="related_works",type = FieldType.Text)
-    private List<String> related_works;
-    @Field(name="information",type = FieldType.Text)
+    private String referenced_works;
+    private String related_works;
     private String information;
+    private String lan;
+    private String issn;
 
+    private boolean is_active;
     @Override
     public String toString() {
         return "PaperDoc{" +

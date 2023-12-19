@@ -7,6 +7,8 @@ import com.touchfish.Po.Paper;
 import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.IPaper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +21,8 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
     public List<SearchHit<PaperDoc>> findByTitleContains(String title){
         return repository.findByTitleContains(title);
     }
-    public List<SearchHit<PaperDoc>> findByAbstract(String keyword){
-        return repository.findByAbstracts(keyword);
+    public Page<PaperDoc> findByAbstract(String keyword, Pageable pageable){
+        return repository.findByAbstracts(keyword,pageable);
     }
     public List<SearchHit<PaperDoc>> findByInformation(String content){return repository.findByInformation(content);}
 }
