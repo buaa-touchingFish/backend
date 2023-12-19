@@ -96,6 +96,17 @@
 			<version>2.1.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.qiniu</groupId>
+			<artifactId>qiniu-java-sdk</artifactId>
+			<version>[7.13.0, 7.13.99]</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.9.0</version>
+		</dependency>
 
 	</dependencies>
 
@@ -116,5 +127,8 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
+
 
 </project>
