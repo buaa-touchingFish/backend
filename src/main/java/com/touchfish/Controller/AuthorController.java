@@ -5,14 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorHome;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CoAuthor;
-//import com.touchfish.MiddleClass.Institution;
 import com.touchfish.Po.Author;
 import com.touchfish.Po.AuthorPaper;
+import com.touchfish.Po.Institution;
 import com.touchfish.Po.Paper;
-import com.touchfish.Service.impl.AuthorImpl;
-import com.touchfish.Service.impl.AuthorPaperImpl;
-import com.touchfish.Service.impl.PaperImpl;
-import com.touchfish.Tool.OpenAlex;
+import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,26 +28,27 @@ public class AuthorController {
     private AuthorPaperImpl authorPaperService;
     @Autowired
     private PaperImpl paperService;
+    @Autowired
+    private InstitutionImpl institutionService;
+    @Autowired
+    private InstitutionAuthorImpl institutionAuthorService;
 
     @GetMapping
     @Operation(summary = "获取学者门户")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"author_id\":\"学者id\"")
-    public Result<AuthorHome> getAuthor(@RequestBody Map<String, String> map) {
+    public Result<AuthorHome> getAuthorHome(String author_id) {
         List<Paper> papers = new ArrayList<>();
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
-        String author_id = map.get("author_id");
-        //减少发请求次数，一次发
-        //写成update Author方法，维护所有表
-        //多线程 一个返回信息，一个存数据库
+        //todo:减少发请求次数，一次发
         Author author = authorService.getById(author_id);
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
         for(String paper_id:authorPaper.getPapers()) {
             Paper paper = paperService.getById(paper_id);
             papers.add(paper);
             List<AuthorShip> authorships = paper.getAuthorships();
-            List<AuthorShip> authorShipList = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
+            authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
             });
-            for(AuthorShip authorShip: authorShipList)
+            for(AuthorShip authorShip: authorships)
             {
                 String ship_author_id = authorShip.getAuthor().getId();
                 if(ship_author_id.equals(author_id))
@@ -89,11 +87,10 @@ public class AuthorController {
     }
 
     public Author getAuthorFromOpenAlex(String author_id) {
-        //todo:维护所有表
         Author author = authorService.updateAuthorFromOpenAlex(author_id);
-//        Institution institution =
-//        if(!institutionService.updateAuthorFromOpenAlex(author_id))  return Result.fail("OpenAlex getInstitution failed");
-//        if(!authorService.updateAuthorFromOpenAlex(author_id))  return Result.fail("OpenAlex getAuthor failed");
+        Institution institution = institutionService.updateInstFromOpenAlex(author.getLast_known_institution().getId());
+        institutionAuthorService.saveInstAuthor(institution.getId(), author.getId());
         return author;
     }
+
 }

@@ -4,11 +4,14 @@ package com.touchfish.Controller;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.touchfish.Dto.ClaimInfo;
-import com.touchfish.Dto.LoginInfo;
-import com.touchfish.Dto.PwdChangeInfo;
-import com.touchfish.Dto.RegisterInfo;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.qiniu.util.Auth;
+import com.touchfish.Dao.AuthorMapper;
+import com.touchfish.Dto.*;
+import com.touchfish.Po.Author;
 import com.touchfish.Po.User;
+import com.touchfish.Service.impl.AuthorImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.*;
 import io.lettuce.core.ScriptOutputType;
@@ -21,8 +24,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -38,12 +48,14 @@ public class UserController {
     private UserImpl user;
 
 
+    @Autowired
+    private QiNiuOssUtil qiNiuOssUtil;
 
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱")
-    public Result<String> registerSendCaptcha(@RequestBody String email){ //注册时发送邮箱验证码
-        Integer result = user.sendCaptcha(email);
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "验证码 \"email\":")
+    public Result<String> registerSendCaptcha(@RequestBody Map<String,String> email){ //注册时发送邮箱验证码
+        Integer result = user.sendCaptcha(email.get("email"));
         if (result == 0) return Result.ok("验证码已发送");
         else return Result.fail("验证码发送失败") ;
     }
@@ -156,6 +168,46 @@ public class UserController {
         return Result.ok("门户认领成功");
     }
 
+    @PostMapping("/upload")
+    @LoginCheck
+    @Operation(summary = "上传头像",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "上传文件头像 content-type = multipart/form-data 以formdata的格式上传参数名为file 类型为file")
+    public Result<String>  upLoadAvatar(@RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            return Result.fail("上传失败,头像为空");
+        }
+        User myUser = UserContext.getUser();
+        String fileName = file.getOriginalFilename();
+        InputStream inputStream = file.getInputStream();
+        String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
+        myUser.setAvatar(upload);
+        user.updateById(myUser);
+        return Result.ok("上传成功",upload);
+    }
+
+    @PostMapping("/changeinfo")
+    @LoginCheck
+    @Operation(summary = "修改个人信息",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "这里只能修改用户名、邮箱和电话号")
+    public Result<String> changeInfo(@RequestBody UserInfo userInfo){
+        User myUser = UserContext.getUser();
+        if (!userInfo.getUsername().equals(myUser.getUsername())){
+            if (user.lambdaQuery().eq(User::getUsername,userInfo.getUsername()).exists()){
+                return Result.fail("用户名已存在");
+            }else{
+                myUser.setUsername(userInfo.getUsername());
+            }
+        }
+        if (!userInfo.getPhone().equals(myUser.getPhone())){
+            myUser.setPhone(userInfo.getPhone());
+        }
+        if (!userInfo.getEmail().equals(myUser.getEmail())){
+            myUser.setEmail(userInfo.getEmail());
+        }
+        boolean update = user.lambdaUpdate().eq(User::getUid, myUser.getUid()).update(myUser);
+        if (update) return Result.ok("修改信息成功");
+        else return Result.fail("修改信息失败");
+    }
 
 }
 

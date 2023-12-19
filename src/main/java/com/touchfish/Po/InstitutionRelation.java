@@ -1,5 +1,10 @@
 package com.touchfish.Po;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class InstitutionRelation {
     private String id;
     private String ror;

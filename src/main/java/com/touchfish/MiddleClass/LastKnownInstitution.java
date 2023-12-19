@@ -5,7 +5,7 @@ import lombok.Data;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-public class MiddleInstitution {
+public class LastKnownInstitution {
     private String id;
     private String type;
     private String country_code;

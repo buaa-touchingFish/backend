@@ -3,11 +3,13 @@ package com.touchfish.Po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @TableName("notice")
+@AllArgsConstructor
 @NoArgsConstructor
 public class Notice {
     @TableId(type = IdType.AUTO)

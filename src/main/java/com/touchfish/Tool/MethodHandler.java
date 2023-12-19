@@ -32,11 +32,13 @@ public class MethodHandler  implements HandlerInterceptor {
         boolean nolog = true;
         if(null != logMethod){
             nolog = false;
-            String jwt = request.getHeader("Authorization").substring(7);
-//            System.out.println(jwt);
+            String jwt = request.getHeader("Authorization");
             if (jwt == null) {
                 flag = false;
             }else{
+                if (jwt.substring(0,6).equals("Bearer")){
+                    jwt = jwt.substring(7);
+                }
                 try {
                     username = JWT.extractUsername(jwt);
                 }catch (Exception e){
