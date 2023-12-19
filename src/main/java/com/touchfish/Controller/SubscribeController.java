@@ -48,8 +48,7 @@ public class SubscribeController {
     @LoginCheck
     @Operation(summary = "获取订阅列表")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
-    public Result<ArrayList<String>> getAuthorByUser(@RequestBody Map<String, String> map) {
-        Integer user_id = Integer.parseInt(map.get("user_id"));
+    public Result<ArrayList<String>> getAuthorByUser(Integer user_id) {
         ArrayList<String> subscribes = subscribeService.getSubscribes(user_id);
         return Result.ok("获取订阅列表成功", subscribes);
     }
