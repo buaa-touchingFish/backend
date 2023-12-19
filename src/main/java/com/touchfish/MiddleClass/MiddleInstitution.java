@@ -1,7 +1,9 @@
 package com.touchfish.MiddleClass;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class MiddleInstitution {
     private String id;

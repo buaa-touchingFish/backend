@@ -6,15 +6,17 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.touchfish.MiddleClass.MiddleInstitution;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @TableName(value = "author", autoResultMap = true)
 public class Author {
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.INPUT)
     private String id;
     private String display_name;
     private Integer works_count;
@@ -25,5 +27,5 @@ public class Author {
     private List<String> fields;
     private Integer h_index;
     private Integer claim_uid;
-    private LocalDateTime updated_date;
+    private String updated_date;
 }
