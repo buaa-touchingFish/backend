@@ -18,6 +18,8 @@ public class User {
     private String phone;
     private String author_id;//认领的门户
 
+    private String avatar; //头像url
+
     public User(String username, String password, String email, String author_id) {
         this.username = username;
         this.password = password;
