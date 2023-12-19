@@ -1,6 +1,7 @@
 package com.touchfish.Controller;
 
 import com.touchfish.Dao.ElasticSearchRepository;
+import com.touchfish.Dto.SearchInfo;
 import com.touchfish.Po.Paper;
 import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.impl.PaperImpl;
@@ -38,17 +39,22 @@ public class PaperController {
         Paper one = paper.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         return Result.ok("200",one);
     }
-    @PostMapping("/search")
+    @GetMapping("/search")
     @Operation(summary = "搜索论文")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "")
-    public Result<List<Paper>> search()
-    /*@GetMapping("/title")
+    //@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"content\":\"内容相关（title、abstract、keyword）\"")
+    public Result<List<Paper>> searchWorkbyContent(){
+        //String content=json.get("content");
+        List<SearchHit<PaperDoc>> paperDocList=paper.findByTitleContains("computer");
+        System.out.println(paperDocList.get(1));
+        return Result.ok("200");
+    }
+   /* @GetMapping("/title")
     @Operation(summary = "获取文献")
     public Result<PaperDoc> getWork(){
         PaperDoc paperDoc=paper.findByTitle("Extrapolation and bubbles");
         System.out.println(paperDoc);
         return Result.ok("200",paperDoc);
-    }
+    }*/
     @GetMapping("/abstract")
     public Result<List<PaperDoc>> getAbstract(){
         List<SearchHit<PaperDoc>>paper1=paper.findByAbstract("computer");
@@ -56,5 +62,5 @@ public class PaperController {
             System.out.println(paperDocSearchHit.getContent());
         }
         return Result.ok("200");
-    }*/
+    }
 }

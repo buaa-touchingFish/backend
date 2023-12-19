@@ -34,7 +34,7 @@ public class PaperDoc {
     private String doi;
     @Field(name = "publication_date",type = FieldType.Date)
     private String publication_date;
-    @Field(name = "publication_date",type = FieldType.Date)
+    @Field(name = "type",type = FieldType.Keyword)
 
     private String type;
     @Field(name = "publisher",type = FieldType.Keyword)
@@ -44,6 +44,8 @@ public class PaperDoc {
     private List<String> referenced_works;
     @Field(name="related_works",type = FieldType.Text)
     private List<String> related_works;
+    @Field(name="information",type = FieldType.Text)
+    private String information;
 
     @Override
     public String toString() {

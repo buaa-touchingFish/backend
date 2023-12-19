@@ -16,11 +16,11 @@ import java.util.List;
 public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper {
     @Autowired
     ElasticSearchRepository repository;
-    public PaperDoc findByTitle(String title){
-        return repository.findByTitle(title);
+    public List<SearchHit<PaperDoc>> findByTitleContains(String title){
+        return repository.findByTitleContains(title);
     }
     public List<SearchHit<PaperDoc>> findByAbstract(String keyword){
         return repository.findByAbstracts(keyword);
     }
-
+    public List<SearchHit<PaperDoc>> findByInformation(String content){return repository.findByInformation(content);}
 }

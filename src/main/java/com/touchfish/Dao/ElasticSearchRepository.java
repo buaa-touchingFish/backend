@@ -25,6 +25,7 @@ public interface ElasticSearchRepository extends ElasticsearchRepository<PaperDo
     )
     //List<SearchHit<PaperDoc>> findByTitleOrContent(String title, String content);
     //List<SearchHit<PaperDoc>> findById(String id);
-    PaperDoc findByTitle(String title);
+    List<SearchHit<PaperDoc>> findByTitleContains(String title);
     List<SearchHit<PaperDoc>> findByAbstracts(String keyword);
+    List<SearchHit<PaperDoc>> findByInformation(String content);
 }

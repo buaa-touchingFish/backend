@@ -8,7 +8,8 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import java.util.List;
 
 public interface IPaper extends IService<Paper> {
-    PaperDoc findByTitle(String title);
+    List<SearchHit<PaperDoc>> findByTitleContains(String title);
     List<SearchHit<PaperDoc>> findByAbstract(String keyword);
+    List<SearchHit<PaperDoc>> findByInformation(String content);
 
 }
