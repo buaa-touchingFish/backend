@@ -38,7 +38,11 @@ public class PaperController {
         Paper one = paper.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         return Result.ok("200",one);
     }
-    @GetMapping("/title")
+    @PostMapping("/search")
+    @Operation(summary = "搜索论文")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "")
+    public Result<List<Paper>> search()
+    /*@GetMapping("/title")
     @Operation(summary = "获取文献")
     public Result<PaperDoc> getWork(){
         PaperDoc paperDoc=paper.findByTitle("Extrapolation and bubbles");
@@ -52,5 +56,5 @@ public class PaperController {
             System.out.println(paperDocSearchHit.getContent());
         }
         return Result.ok("200");
-    }
+    }*/
 }
