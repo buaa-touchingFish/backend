@@ -102,7 +102,7 @@ public class UserController {
     @PostMapping("/findpwd")
     @Operation(summary = "修改/找回密码时发送验证码")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱")
-    public Result<String>  findPwd(@RequestBody String email){
+    public Result<String> findPwd(@RequestBody String email){
         email = email.replace("\"","");
         if (!user.lambdaQuery().eq(User::getEmail,email).exists()){
             return Result.fail("用户邮箱不存在");
@@ -115,7 +115,7 @@ public class UserController {
     @PostMapping("/changepwd")
     @Operation(summary = "修改/找回密码验证码确认")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱 新密码 验证码")
-    public Result<String> changePwd( @RequestBody  PwdChangeInfo pwdChangeInfo){
+    public Result<String> changePwd( @RequestBody PwdChangeInfo pwdChangeInfo){
         String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+pwdChangeInfo.getEmail());
         if (StrUtil.isEmpty(captcha)){
            return Result.fail("验证码已失效");
