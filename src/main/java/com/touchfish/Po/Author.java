@@ -6,10 +6,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.touchfish.MiddleClass.Institution;
+import com.touchfish.MiddleClass.LastKnownInstitution;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,7 +21,7 @@ public class Author {
     private Integer works_count;
     private Integer cited_by_count;
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Institution last_known_institution;
+    private LastKnownInstitution last_known_institution;
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> fields;
     private Integer h_index;

@@ -49,8 +49,7 @@ public class CollectController {
     @GetMapping
     @Operation(summary = "获取收藏列表")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
-    public Result<List<CollectInfo>> getCollectByUser(@RequestBody Map<String, String> map) {
-        Integer user_id = Integer.parseInt(map.get("user_id"));
+    public Result<List<CollectInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
         return Result.ok("获取收藏列表成功", collects);
     }
