@@ -36,6 +36,9 @@ public class MethodHandler  implements HandlerInterceptor {
             if (jwt == null) {
                 flag = false;
             }else{
+                if (jwt.substring(0,6).equals("Bearer")){
+                    jwt = jwt.substring(7);
+                }
                 try {
                     username = JWT.extractUsername(jwt);
                 }catch (Exception e){
