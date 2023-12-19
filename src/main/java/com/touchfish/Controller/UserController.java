@@ -41,7 +41,7 @@ public class UserController {
 
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "验证码")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱")
     public Result<String> registerSendCaptcha(@RequestBody String email){ //注册时发送邮箱验证码
         Integer result = user.sendCaptcha(email);
         if (result == 0) return Result.ok("验证码已发送");

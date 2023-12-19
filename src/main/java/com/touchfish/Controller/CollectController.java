@@ -24,7 +24,7 @@ public class CollectController {
 
     @PostMapping
     @Operation(summary = "收藏文章")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id 文章id")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\"")
     public Result<String> saveCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
@@ -36,7 +36,7 @@ public class CollectController {
 
     @DeleteMapping
     @Operation(summary = "取消收藏")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id 文章id")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\"")
     public Result<String> deleteCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
@@ -48,7 +48,7 @@ public class CollectController {
 
     @GetMapping
     @Operation(summary = "获取收藏列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
     public Result<List<CollectInfo>> getCollectByUser(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         List<CollectInfo> collects = collectService.getCollects(user_id);
@@ -57,7 +57,7 @@ public class CollectController {
 
     @PostMapping("/label")
     @Operation(summary = "添加标签")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id 文章id 标签")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\", \"label_name\":\"标签名称\"")
     public Result<String> addLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
@@ -77,7 +77,7 @@ public class CollectController {
 
     @DeleteMapping("/label")
     @Operation(summary = "删除标签")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id 文章id 标签")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\", \"label_name\":\"标签名称\"")
     public Result<String> deleteLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
