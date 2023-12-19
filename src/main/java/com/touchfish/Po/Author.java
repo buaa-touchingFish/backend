@@ -1,27 +1,29 @@
 package com.touchfish.Po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.touchfish.MiddleClass.MiddleInstitution;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableName(value = "institution", autoResultMap = true)
-@NoArgsConstructor
-public class Institution {
+@TableName(value = "author", autoResultMap = true)
+public class Author {
+    @TableId(type = IdType.AUTO)
     private String id;
     private String display_name;
-    private String ror;
-    private String country_code;
     private Integer works_count;
     private Integer cited_by_count;
-    private String type;
-    private String homepage_url;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private MiddleInstitution last_known_institution;
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> fields;
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<InstitutionRelation> associated_institutions;
+    private Integer h_index;
+    private Integer claim_uid;
+    private LocalDateTime updated_date;
 }

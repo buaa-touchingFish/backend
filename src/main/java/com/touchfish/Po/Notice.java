@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@TableName("Notice")
+@TableName("notice")
 @NoArgsConstructor
 public class Notice {
     @TableId(type = IdType.AUTO)
