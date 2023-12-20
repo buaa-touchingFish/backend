@@ -22,13 +22,13 @@ public interface ElasticSearchRepository extends ElasticsearchRepository<PaperDo
      * @param content 内容
      * @return 返回关键字高亮的结果集
      */
-    @Highlight(
+   /* @Highlight(
             fields = {@HighlightField(name = "title")},
             parameters = @HighlightParameters(preTags = {"<span style='color:red'>"}, postTags = {"</span>"}, numberOfFragments = 0)
-    )
-    //List<SearchHit<PaperDoc>> findByTitleOrContent(String title, String content);
-    //List<SearchHit<PaperDoc>> findById(String id);
-    List<SearchHit<PaperDoc>> findByTitleContains(String title);
-    Page<PaperDoc> findByAbstracts(String keyword, Pageable pageable);
-    List<SearchHit<PaperDoc>> findByInformation(String content);
+    )*/
+
+    Page<PaperDoc> findByInformation(String keyword, Pageable pageable);
+    Page<PaperDoc> findByAuthorships(String author,Pageable pageable);
+    Page<PaperDoc> findByAuthorshipsAndAbstractsIsNotEmpty(String author,Pageable pageable);
+    Page<PaperDoc> findByPublisher(String publisher,Pageable pageable);
 }

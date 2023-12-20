@@ -10,8 +10,5 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import java.util.List;
 
 public interface IPaper extends IService<Paper> {
-    List<SearchHit<PaperDoc>> findByTitleContains(String title);
-    Page<PaperDoc> findByAbstract(String keyword, Pageable pageable);
-    List<SearchHit<PaperDoc>> findByInformation(String content);
 
 }

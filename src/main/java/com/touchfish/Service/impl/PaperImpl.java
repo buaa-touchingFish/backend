@@ -16,13 +16,5 @@ import java.util.List;
 
 @Service
 public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper {
-    @Autowired
-    ElasticSearchRepository repository;
-    public List<SearchHit<PaperDoc>> findByTitleContains(String title){
-        return repository.findByTitleContains(title);
-    }
-    public Page<PaperDoc> findByAbstract(String keyword, Pageable pageable){
-        return repository.findByAbstracts(keyword,pageable);
-    }
-    public List<SearchHit<PaperDoc>> findByInformation(String content){return repository.findByInformation(content);}
+
 }
