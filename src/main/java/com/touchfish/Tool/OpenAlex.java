@@ -53,8 +53,11 @@ public class OpenAlex {
                         }
                         author.setId(findId(author.getId()));
                         LastKnownInstitution lastKnownInstitution = author.getLast_known_institution();
-                        lastKnownInstitution.setId(findId(lastKnownInstitution.getId()));
-                        author.setLast_known_institution(lastKnownInstitution);
+                        if(lastKnownInstitution != null)
+                        {
+                            lastKnownInstitution.setId(findId(lastKnownInstitution.getId()));
+                            author.setLast_known_institution(lastKnownInstitution);
+                        }
                         author.setH_index(h_index);
                         author.setFields(authorFields);
                     }
@@ -68,10 +71,13 @@ public class OpenAlex {
                             instFields.add(field);
                         }
                         List<InstitutionRelation> associatedInstitutions = institution.getAssociated_institutions();
-                        for (InstitutionRelation associatedInstitution : associatedInstitutions) {
-                            associatedInstitution.setId(findId(associatedInstitution.getId()));
+                        if(associatedInstitutions != null)
+                        {
+                            for (InstitutionRelation associatedInstitution : associatedInstitutions) {
+                                associatedInstitution.setId(findId(associatedInstitution.getId()));
+                            }
+                            institution.setAssociated_institutions(associatedInstitutions);
                         }
-                        institution.setAssociated_institutions(associatedInstitutions);
                         institution.setId(findId(institution.getId()));
                         institution.setFields(instFields);
                     }

@@ -12,4 +12,13 @@ public class CoAuthor {
     private String id;
     private String display_name;
     private String last_known_institution_display_name;
+
+    public CoAuthor(String id, String display_name) {
+        this.id = id;
+        this.display_name = display_name;
+    }
+
+    public CoAuthor(String id) {
+        this.id = id;
+    }
 }

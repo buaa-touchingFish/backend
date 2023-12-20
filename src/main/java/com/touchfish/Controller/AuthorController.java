@@ -39,38 +39,35 @@ public class AuthorController {
     public Result<AuthorHome> getAuthorHome(String author_id) {
         List<Paper> papers = new ArrayList<>();
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
-        //todo:减少发请求次数，一次发
         Author author = authorService.getById(author_id);
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
-        for(String paper_id:authorPaper.getPapers()) {
+        for (String paper_id : authorPaper.getPapers()) {
             Paper paper = paperService.getById(paper_id);
             papers.add(paper);
             List<AuthorShip> authorships = paper.getAuthorships();
             authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
             });
-            for(AuthorShip authorShip: authorships)
-            {
+            for (AuthorShip authorShip : authorships) {
                 String ship_author_id = authorShip.getAuthor().getId();
-                if(ship_author_id.equals(author_id))
+                if (ship_author_id.equals(author_id))
                     continue;
                 Author ship_author = authorService.getById(ship_author_id);
-                if(ship_author == null) {
-                    ship_author = getAuthorFromOpenAlex(ship_author_id);
-                    if(ship_author == null) return Result.fail("OpenAlex请求失败");
+                if (ship_author == null) {
+                    ship_author = new Author();
+                    ship_author.setId(ship_author_id);
                 }
                 CoAuthor coAuthor;
                 boolean flag = false;
-                for(CoAuthor coAuthor1: CoAuthors.keySet()) {
-                    if(coAuthor1.getId().equals(ship_author_id))
-                    {
+                for (CoAuthor coAuthor1 : CoAuthors.keySet()) {
+                    if (coAuthor1.getId().equals(ship_author_id)) {
                         flag = true;
                         Integer cnt = CoAuthors.get(coAuthor1);
                         CoAuthors.put(coAuthor1, cnt + 1);
                         break;
                     }
                 }
-                if(!flag) {
-                    coAuthor = new CoAuthor(ship_author.getId(), ship_author.getDisplay_name(), ship_author.getLast_known_institution().getDisplay_name());
+                if (!flag) {
+                    coAuthor = new CoAuthor(ship_author.getId());
                     CoAuthors.put(coAuthor, 1);
                 }
             }
@@ -81,15 +78,26 @@ public class AuthorController {
         for (Map.Entry<CoAuthor, Integer> entry : entryList) {
             sortedCoAuthors.add(entry.getKey());
         }
-
-        AuthorHome authorHome = new AuthorHome(author, papers, sortedCoAuthors.subList(0, Math.min(10, sortedCoAuthors.size())));
+        List<CoAuthor> returnCoAuthors = sortedCoAuthors.subList(0, Math.min(5, sortedCoAuthors.size()));
+        for(CoAuthor coAuthor:returnCoAuthors)
+        {
+            Author author1 = authorService.getById(coAuthor.getId());
+            if(author1 == null)
+                author1 = getAuthorFromOpenAlex(coAuthor.getId());
+            coAuthor.setDisplay_name(author1.getDisplay_name());
+            if(author1.getLast_known_institution() != null)
+                coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
+        }
+        AuthorHome authorHome = new AuthorHome(author, papers, returnCoAuthors);
         return Result.ok("查看学者门户成功", authorHome);
     }
 
     public Author getAuthorFromOpenAlex(String author_id) {
         Author author = authorService.updateAuthorFromOpenAlex(author_id);
-        Institution institution = institutionService.updateInstFromOpenAlex(author.getLast_known_institution().getId());
-        institutionAuthorService.saveInstAuthor(institution.getId(), author.getId());
+        if (author.getLast_known_institution() != null) {
+            Institution institution = institutionService.updateInstFromOpenAlex(author.getLast_known_institution().getId());
+            institutionAuthorService.saveInstAuthor(institution.getId(), author.getId());
+        }
         return author;
     }
 

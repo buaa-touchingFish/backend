@@ -15,4 +15,5 @@ public class AuthorHome {
     private Author author;
     private List<Paper> papers;
     private List<CoAuthor> co_authors;
+//    private Integer subscriberCnt;
 }
