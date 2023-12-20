@@ -109,5 +109,6 @@ public class PaperController {
             paperDocs.add(paperDoc);
         }*/
         //return Result.ok("查询成功",paperDocs);
+        return Result.ok("");
     }
 }
