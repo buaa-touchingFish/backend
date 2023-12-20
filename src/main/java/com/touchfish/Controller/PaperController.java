@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -88,7 +89,7 @@ public class PaperController {
             }
             relWork.setCited_by_count(one.getCited_by_count());
             relWork.setPublication_date(one.getPublication_date());
-            for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
+            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
                 relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
             }
             paperInfo.getRelWorks().add(relWork);
@@ -117,7 +118,7 @@ public class PaperController {
             }
             relWork.setCited_by_count(one.getCited_by_count());
             relWork.setPublication_date(one.getPublication_date());
-            for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
+            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
                 relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
             }
             paperInfo.getRefWorks().add(relWork);
@@ -125,5 +126,36 @@ public class PaperController {
         String s = JSONUtil.toJsonStr(paperInfo);
         stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s);
         return Result.ok("成功返回",paperInfo);
+    }
+
+    @PostMapping("/getRef")
+    public Result<List<RefWork>> getRefWork(@RequestBody Map<String,List<String>> mp){
+        List<String> refs = mp.get("ref");
+        ObjectMapper mapper = new ObjectMapper();
+        List<RefWork> ans = new ArrayList<>();
+        for (String id:refs){
+            RefWork relWork = new RefWork();
+            Paper one = null;
+            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
+                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
+            }else {
+                continue;
+            }
+            List<AuthorShip> authorships1 = one.getAuthorships();
+            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships1, new TypeReference<>() {});
+            relWork.setAbstract(one.getAbstract());
+            relWork.setId(one.getId());
+            relWork.setTitle(one.getTitle());
+            if (one.getPublisher() != null ){
+                relWork.setPublisher(one.getPublisher().display_name);
+            }
+            relWork.setCited_by_count(one.getCited_by_count());
+            relWork.setPublication_date(one.getPublication_date());
+            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
+                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
+            }
+            ans.add(relWork);
+        }
+        return 
     }
 }

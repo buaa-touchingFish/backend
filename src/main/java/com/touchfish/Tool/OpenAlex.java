@@ -41,7 +41,6 @@ public class OpenAlex {
                 }
                 reader.close();
                 String jsonResponse = response.toString();
-                System.out.println(jsonResponse);
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(jsonResponse);
                 switch (table) {

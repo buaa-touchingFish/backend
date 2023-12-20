@@ -45,6 +45,10 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
         if (jsonNode.get("language")!=null){
             paper.setLan(jsonNode.get("language").asText());
         }
+
+        if (jsonNode.get("cited_by_count")!=null){
+            paper.setCited_by_count(jsonNode.get("cited_by_count").asInt());
+        }
         paper.setIs_active(true);
         paper.setAbstract(getAbstract(jsonNode));
         paper.setIssn(get_issn(jsonNode));
@@ -53,6 +57,7 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
         paper.setPublisher(get_publisher(jsonNode));
         paper.setReferenced_works(get_ref_work(jsonNode));
         paper.setRelated_works(get_related_work(jsonNode));
+
         if (jsonNode.get("title")!=null){
             paper.setTitle(jsonNode.get("title").asText());
         }
