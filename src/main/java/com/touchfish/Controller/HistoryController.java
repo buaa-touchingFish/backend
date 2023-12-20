@@ -37,7 +37,7 @@ public class HistoryController {
 
     @PostMapping("/create")
     @LoginCheck
-    @Operation(summary = "创建浏览记录")
+    @Operation(summary = "创建浏览记录，如果已存在则更新")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "浏览的文献id")
     public Result<String> createHistory(@RequestBody Map<String, String> map){
         History formerHistory = history.lambdaQuery().eq(History::getId, map.get("paper_id")).one();
@@ -66,6 +66,7 @@ public class HistoryController {
         List<History> historyList = history.lambdaQuery().eq(History::getUser_id, map.get("uid")).list();
         return Result.ok("查询用户浏览记录成功", historyList);
     }
+
 
 
 }
