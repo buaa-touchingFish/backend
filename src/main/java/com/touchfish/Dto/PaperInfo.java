@@ -10,6 +10,7 @@ import java.util.List;
 
 @Data
 public class PaperInfo {
+    private String id;
     private String title; //标题
     private String Abstract;//摘要
     private Integer cited_by_count; //被引用次数

@@ -1,5 +1,6 @@
 package com.touchfish.Controller;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +10,7 @@ import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +38,12 @@ public class PaperController {
     @PostMapping ("/single")
     @Operation(summary = "点击获取单个文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
-    public Result<PaperInfo> getSingleWork(  @RequestBody  Map<String,String> json){
+    public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
+        String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
+        if (id1 != null){
+            PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
+            return Result.ok("成功返回",paperInfo);
+        }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         ObjectMapper mapper = new ObjectMapper();
         List<AuthorShip> authorships = paper.getAuthorships();
@@ -56,7 +63,7 @@ public class PaperController {
         paperInfo.setPublisher(paperInfo.getPublisher());
         paperInfo.setAuthors(paper.getAuthorships());
         paperInfo.setType(paper.getType());
-
+        paperInfo.setId(paper.getId());
 
         int apiCnt = 0;
 
@@ -115,7 +122,8 @@ public class PaperController {
             }
             paperInfo.getRefWorks().add(relWork);
         }
-
+        String s = JSONUtil.toJsonStr(paperInfo);
+        stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s);
         return Result.ok("成功返回",paperInfo);
     }
 }
