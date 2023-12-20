@@ -40,6 +40,8 @@ public class AuthorController {
         List<Paper> papers = new ArrayList<>();
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
         Author author = authorService.getById(author_id);
+        if(author == null)
+            author = getAuthorFromOpenAlex(author_id);
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
         for (String paper_id : authorPaper.getPapers()) {
             Paper paper = paperService.getById(paper_id);
