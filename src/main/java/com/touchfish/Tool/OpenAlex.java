@@ -7,6 +7,9 @@ import com.touchfish.Po.Author;
 import com.touchfish.Po.Institution;
 import com.touchfish.Po.InstitutionRelation;
 import com.touchfish.Po.Paper;
+import com.touchfish.Service.impl.PaperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,6 +23,8 @@ import java.util.regex.Pattern;
 
 public class OpenAlex {
 
+
+    private static PaperImpl paperImpl = new PaperImpl();
     public static Object sendResponse(String table, String id) {
         try {
             Object object = null;
@@ -75,7 +80,11 @@ public class OpenAlex {
                         institution.setId(findId(institution.getId()));
                         institution.setFields(instFields);
                     }
-                    case "paper" -> object = mapper.readValue(jsonResponse, Paper.class);
+                    case "work" -> {
+                        Paper paper = new Paper();
+
+
+                    }
                 }
             } else {
                 System.out.println("HTTP request failed with response code: " + responseCode);
@@ -99,15 +108,21 @@ public class OpenAlex {
         }
     }
 
+
+
+
+
+
+
     public static void main(String[] args) {
         String table, id;
 //        table = "author";
 //        id = "A5077915689";
 //        Author author = (Author) sendResponse(table, id);
 //        System.out.println(author);
-        table = "institution";
-        id = "I27837315";
-        Institution institution = (Institution) sendResponse(table, id);
-        System.out.println(institution);
+        table = "work";
+        id = "W100240748";
+        Paper paper = (Paper) sendResponse(table,id);
+        System.out.println(paper);
     }
 }

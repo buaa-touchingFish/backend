@@ -1,8 +1,11 @@
 package com.touchfish.Controller;
 
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
+import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.Result;
@@ -37,7 +40,50 @@ public class PaperController {
         ObjectMapper mapper = new ObjectMapper();
         List<AuthorShip> authorships = paper.getAuthorships();
         List<AuthorShip> authorShipList = mapper.convertValue(authorships, new TypeReference<>() {});
-        
+        List<String> referenced_works = paper.getReferenced_works();
+        List<String> related_works = paper.getRelated_works();
+
+        PaperInfo paperInfo = new PaperInfo();
+        paperInfo.setAbstract(paper.getAbstract());
+        paperInfo.setIssn(paper.getIssn());
+        paperInfo.setDoi(paper.getDoi());
+        paperInfo.setLan(paper.getLan());
+        paperInfo.setKeywords(paper.getKeywords());
+        paperInfo.setTitle(paper.getTitle());
+        paperInfo.setCited_by_count(paper.getCited_by_count());
+        paperInfo.setPublication_date(paper.getPublication_date());
+        paperInfo.setPublisher(paperInfo.getPublisher());
+        paperInfo.setAuthors(paper.getAuthorships());
+        paperInfo.setType(paper.getType());
+
+
+        int apiCnt = 0;
+
+        for (String id:related_works){
+            if (apiCnt>5) break;
+            RelWork relWork = new RelWork();
+            Paper one = null;
+            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
+                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
+                List<AuthorShip> authorships1 = one.getAuthorships();
+                relWork.setAbstract(one.getAbstract());
+                relWork.setId(one.getId());
+                relWork.setTitle(one.getTitle());
+                relWork.setPublisher(one.getPublisher().display_name);
+                relWork.setCited_by_count(one.getCited_by_count());
+                relWork.setPublication_date(one.getPublication_date());
+                for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
+                    relWork.getAuthors().add(authorships1.get(i).getAuthor());
+                }
+                paperInfo.getRelWorks().add(relWork);
+            }else{
+
+
+                apiCnt++;
+            }
+
+        }
+
         return Result.ok("666");
     }
 
