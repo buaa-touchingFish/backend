@@ -29,7 +29,7 @@ public class Paper {
     private List<String> keywords;
     @TableField("abstract")
     private String Abstract;
-    private Integer cited_by_count;
+    private Integer cited_by_count = 0;
     private String oa_url;
     private String doi;
     private String publication_date;

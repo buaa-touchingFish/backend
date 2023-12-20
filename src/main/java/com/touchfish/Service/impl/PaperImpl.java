@@ -18,26 +18,45 @@ import java.util.regex.Pattern;
 public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper {
 
     public Paper getPaperByAlex(String id){
-        Paper paper = (Paper) OpenAlex.sendResponse("works",id);
+        JsonNode jsonNode = (JsonNode) OpenAlex.sendResponse("work",id);
+        Paper paper = parsePaper(jsonNode);
         return paper;
     }
 
     private Paper parsePaper(JsonNode jsonNode){
         Paper paper = new Paper();
         paper.setId(findId(jsonNode.get("id").asText()));
-        paper.setIssn(jsonNode.get("title").asText());
         if (jsonNode.get("doi")!=null){
-            paper.setDoi(jsonNode.get("doi").asText().substring(0,127));
+            String doi = jsonNode.get("doi").asText();
+            paper.setDoi(doi.substring(0,Math.min(127,doi.length()-1)));
         }
         if (jsonNode.get("oa_url")!=null){
-            paper.setOa_url(jsonNode.get("oa_url").asText().substring(0,255));
+            String oa_url = jsonNode.get("oa_url").asText();
+            paper.setOa_url(oa_url.substring(0,Math.min(255,oa_url.length()-1)));
         }
-        paper.setType(jsonNode.get("type").asText());
+        if (jsonNode.get("type")!=null){
+            paper.setType(jsonNode.get("type").asText());
+        }
 
-        paper.setPublication_date(jsonNode.get("publication_date").asText());
-        paper.setLan(jsonNode.get("lan").asText());
+        if (jsonNode.get("publication_date")!=null){
+            paper.setPublication_date(jsonNode.get("publication_date").asText());
+        }
+
+        if (jsonNode.get("language")!=null){
+            paper.setLan(jsonNode.get("language").asText());
+        }
         paper.setIs_active(true);
         paper.setAbstract(getAbstract(jsonNode));
+        paper.setIssn(get_issn(jsonNode));
+        paper.setAuthorships(get_authorships_data(jsonNode));
+        paper.setKeywords(getKeywords(jsonNode));
+        paper.setPublisher(get_publisher(jsonNode));
+        paper.setReferenced_works(get_ref_work(jsonNode));
+        paper.setRelated_works(get_related_work(jsonNode));
+        if (jsonNode.get("title")!=null){
+            paper.setTitle(jsonNode.get("title").asText());
+        }
+        return paper;
     }
 
     private  String findId(String url) {
@@ -127,7 +146,42 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
         return ans;
     }
 
-    private DisplayInfo get_publisher(){
-
+    private DisplayInfo get_publisher(JsonNode jsonNode){
+        DisplayInfo ans  = new DisplayInfo();
+        JsonNode jsonNode1 = jsonNode.get("primary_location");
+        if (jsonNode1 == null) return null;
+        JsonNode jsonNode2 = jsonNode.get("source");
+        if (jsonNode2 == null) return null;
+        ans.setDisplay_name(jsonNode2.get("display_name").asText());
+        ans.setId(findId(jsonNode2.get("id").asText()));
+        return ans;
     }
+
+    private String get_issn(JsonNode jsonNode){
+        JsonNode jsonNode1 = jsonNode.get("primary_location");
+        if (jsonNode1 == null) return null;
+        JsonNode jsonNode2 = jsonNode.get("source");
+        if (jsonNode2 == null) return null;
+        return jsonNode2.get("issn_l").asText();
+    }
+
+    private List<String> get_related_work(JsonNode jsonNode){
+        List<String> ans  = new ArrayList<>();
+        JsonNode jsonNode1 = jsonNode.get("related_works");
+        for (JsonNode jsonNode2:jsonNode1){
+            ans.add(findId(jsonNode2.asText()));
+        }
+        return ans;
+    }
+
+    private List<String> get_ref_work(JsonNode jsonNode){
+        List<String> ans  = new ArrayList<>();
+        JsonNode jsonNode1 = jsonNode.get("referenced_works");
+        for (JsonNode jsonNode2:jsonNode1){
+            ans.add(findId(jsonNode2.asText()));
+        }
+        return ans;
+    }
+
+
 }

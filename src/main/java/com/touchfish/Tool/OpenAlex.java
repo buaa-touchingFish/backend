@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 public class OpenAlex {
 
 
-    private static PaperImpl paperImpl = new PaperImpl();
     public static Object sendResponse(String table, String id) {
         try {
             Object object = null;
@@ -81,9 +80,7 @@ public class OpenAlex {
                         institution.setFields(instFields);
                     }
                     case "work" -> {
-                        Paper paper = new Paper();
-
-
+                        return jsonNode;
                     }
                 }
             } else {

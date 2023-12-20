@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
+import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.PaperImpl;
@@ -35,7 +36,7 @@ public class PaperController {
     @PostMapping ("/single")
     @Operation(summary = "点击获取单个文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
-    public Result<Paper> getSingleWork(  @RequestBody  Map<String,String> json){
+    public Result<PaperInfo> getSingleWork(  @RequestBody  Map<String,String> json){
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
         ObjectMapper mapper = new ObjectMapper();
         List<AuthorShip> authorships = paper.getAuthorships();
@@ -65,26 +66,56 @@ public class PaperController {
             Paper one = null;
             if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
                 one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
-                List<AuthorShip> authorships1 = one.getAuthorships();
-                relWork.setAbstract(one.getAbstract());
-                relWork.setId(one.getId());
-                relWork.setTitle(one.getTitle());
-                relWork.setPublisher(one.getPublisher().display_name);
-                relWork.setCited_by_count(one.getCited_by_count());
-                relWork.setPublication_date(one.getPublication_date());
-                for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
-                    relWork.getAuthors().add(authorships1.get(i).getAuthor());
-                }
-                paperInfo.getRelWorks().add(relWork);
             }else{
-
-
+                one = paperImpl.getPaperByAlex(id);
+                paperImpl.saveOrUpdate(one);
                 apiCnt++;
             }
-
+            List<AuthorShip> authorships1 = one.getAuthorships();
+            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships, new TypeReference<>() {});
+            relWork.setAbstract(one.getAbstract());
+            relWork.setId(one.getId());
+            relWork.setTitle(one.getTitle());
+            if (one.getPublisher() != null ){
+                relWork.setPublisher(one.getPublisher().display_name);
+            }
+            relWork.setCited_by_count(one.getCited_by_count());
+            relWork.setPublication_date(one.getPublication_date());
+            for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
+                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
+            }
+            paperInfo.getRelWorks().add(relWork);
         }
 
-        return Result.ok("666");
-    }
+        apiCnt = 0;
 
+        for (String id:referenced_works){
+            if (apiCnt>5) break;
+            RefWork relWork = new RefWork();
+            Paper one = null;
+            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
+                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
+            }else{
+                one = paperImpl.getPaperByAlex(id);
+                paperImpl.saveOrUpdate(one);
+                apiCnt++;
+            }
+            List<AuthorShip> authorships1 = one.getAuthorships();
+            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships, new TypeReference<>() {});
+            relWork.setAbstract(one.getAbstract());
+            relWork.setId(one.getId());
+            relWork.setTitle(one.getTitle());
+            if (one.getPublisher() != null ){
+                relWork.setPublisher(one.getPublisher().display_name);
+            }
+            relWork.setCited_by_count(one.getCited_by_count());
+            relWork.setPublication_date(one.getPublication_date());
+            for (int i=0;i<3&&i<authorships1.size();i++){ //展示至多3位
+                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
+            }
+            paperInfo.getRefWorks().add(relWork);
+        }
+
+        return Result.ok("成功返回",paperInfo);
+    }
 }
