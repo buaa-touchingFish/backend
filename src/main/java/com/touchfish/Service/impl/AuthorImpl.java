@@ -3,6 +3,7 @@ package com.touchfish.Service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.touchfish.Dao.AuthorMapper;
 import com.touchfish.Po.Author;
+import com.touchfish.Po.Paper;
 import com.touchfish.Service.IAuthor;
 import com.touchfish.Tool.OpenAlex;
 import org.springframework.stereotype.Service;
