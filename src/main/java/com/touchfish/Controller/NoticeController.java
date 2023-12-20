@@ -31,17 +31,15 @@ public class NoticeController {
     @Autowired
     private AuthorImpl author;
     @Autowired
-    private UserImpl user;
-    @Autowired
     private SubscribeImpl subscribe;
 
     private static String getTimeNow(){
         Date date = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return formatter.format(date);
     }
     @PostMapping("/create")
-    @LoginCheck
+//    @LoginCheck
     @Operation(summary = "创建消息")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "消息标题 消息内容 接收者id")
     public Result<String> createNotice(@RequestBody NoticeInfo noticeInfo) {
@@ -57,12 +55,26 @@ public class NoticeController {
     }
 
     @PostMapping("/get")
-    @LoginCheck
+//    @LoginCheck
     @Operation(summary = "获取用户所有消息（按时间从新到旧排序）")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id")
     public Result<List<Notice>> getNoticesByUid(@RequestBody Map<String, String> map){
         List<Notice> userNoticeList = notice.lambdaQuery().eq(Notice::getUser_id, map.get("uid")).list();
         return Result.ok("查询用户所有消息成功", userNoticeList);
+    }
+
+    @PostMapping("/update")
+//    @LoginCheck
+    @Operation(summary = "更新消息为已读")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "消息id")
+    public Result<String> updateNoticeStatus(@RequestBody Map<String, String> map) {
+        Notice targetNotice = notice.getBaseMapper().selectById(map.get("id"));
+        if(targetNotice == null){
+            return Result.fail("消息不存在");
+        }
+        targetNotice.setRead_status(true);
+        notice.updateById(targetNotice);
+        return Result.ok("消息改已读成功");
     }
 
 
