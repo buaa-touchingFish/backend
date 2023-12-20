@@ -1,5 +1,6 @@
 package com.touchfish.Controller;
 
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,6 +11,7 @@ import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Tool.OpenAlex;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 
@@ -65,70 +67,30 @@ public class PaperController {
         paperInfo.setAuthors(paper.getAuthorships());
         paperInfo.setType(paper.getType());
         paperInfo.setId(paper.getId());
+        paperInfo.setRefWorks(paper.getReferenced_works());
+        paperInfo.setRelWorks(paper.getRelated_works());
 
-        int apiCnt = 0;
-
-        for (String id:related_works){
-            if (apiCnt>5) break;
-            RelWork relWork = new RelWork();
-            Paper one = null;
-            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
-                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
-            }else{
-                one = paperImpl.getPaperByAlex(id);
+        ThreadUtil.execute(()->{
+            for (String id:referenced_works){
+                Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
-                apiCnt++;
             }
-            List<AuthorShip> authorships1 = one.getAuthorships();
-            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships, new TypeReference<>() {});
-            relWork.setAbstract(one.getAbstract());
-            relWork.setId(one.getId());
-            relWork.setTitle(one.getTitle());
-            if (one.getPublisher() != null ){
-                relWork.setPublisher(one.getPublisher().display_name);
-            }
-            relWork.setCited_by_count(one.getCited_by_count());
-            relWork.setPublication_date(one.getPublication_date());
-            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
-                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
-            }
-            paperInfo.getRelWorks().add(relWork);
-        }
+        });
 
-        apiCnt = 0;
-
-        for (String id:referenced_works){
-            if (apiCnt>5) break;
-            RefWork relWork = new RefWork();
-            Paper one = null;
-            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
-                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
-            }else{
-                one = paperImpl.getPaperByAlex(id);
+        ThreadUtil.execute(()->{
+            for (String id:related_works){
+                Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
-                apiCnt++;
             }
-            List<AuthorShip> authorships1 = one.getAuthorships();
-            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships, new TypeReference<>() {});
-            relWork.setAbstract(one.getAbstract());
-            relWork.setId(one.getId());
-            relWork.setTitle(one.getTitle());
-            if (one.getPublisher() != null ){
-                relWork.setPublisher(one.getPublisher().display_name);
-            }
-            relWork.setCited_by_count(one.getCited_by_count());
-            relWork.setPublication_date(one.getPublication_date());
-            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
-                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
-            }
-            paperInfo.getRefWorks().add(relWork);
-        }
+        });
         String s = JSONUtil.toJsonStr(paperInfo);
         stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s);
         return Result.ok("成功返回",paperInfo);
     }
 
     @PostMapping("/getRef")
+    @Operation(summary = "点击获取文献的参考文献")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"ref\":[id1,id2,id3....]")
     public Result<List<RefWork>> getRefWork(@RequestBody Map<String,List<String>> mp){
         List<String> refs = mp.get("ref");
         ObjectMapper mapper = new ObjectMapper();
@@ -156,6 +118,39 @@ public class PaperController {
             }
             ans.add(relWork);
         }
-        return 
+        return Result.ok("成功返回",ans);
+    }
+
+    @PostMapping("/getRel")
+    @Operation(summary = "点击获取文献的参考文献")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"rel\":[id1,id2,id3....]")
+    public Result<List<RelWork>> getRelWork(@RequestBody Map<String,List<String>> mp){
+        List<String> rels = mp.get("rel");
+        ObjectMapper mapper = new ObjectMapper();
+        List<RelWork> ans = new ArrayList<>();
+        for (String id:rels){
+            RelWork relWork = new RelWork();
+            Paper one = null;
+            if (paperImpl.lambdaQuery().eq(Paper::getId,id).exists()){
+                one = paperImpl.lambdaQuery().eq(Paper::getId, id).one();
+            }else {
+                continue;
+            }
+            List<AuthorShip> authorships1 = one.getAuthorships();
+            List<AuthorShip> authorShipList1 = mapper.convertValue(authorships1, new TypeReference<>() {});
+            relWork.setAbstract(one.getAbstract());
+            relWork.setId(one.getId());
+            relWork.setTitle(one.getTitle());
+            if (one.getPublisher() != null ){
+                relWork.setPublisher(one.getPublisher().display_name);
+            }
+            relWork.setCited_by_count(one.getCited_by_count());
+            relWork.setPublication_date(one.getPublication_date());
+            for (int i=0;i<3&&i<authorShipList1.size();i++){ //展示至多3位
+                relWork.getAuthors().add(authorShipList1.get(i).getAuthor());
+            }
+            ans.add(relWork);
+        }
+        return Result.ok("成功返回",ans);
     }
 }

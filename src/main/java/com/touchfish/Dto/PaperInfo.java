@@ -23,7 +23,6 @@ public class PaperInfo {
     private String  publisher ;// 发表的刊物
     private List<String> keywords; // 关键词
     private List<AuthorShip> authors;//作者相关信息
-    private List<RelWork> relWorks = new ArrayList<>();//相关文献
-    private List<RefWork> refWorks = new ArrayList<>();//参考文献
-
+    private List<String> relWorks = new ArrayList<>();//相关文献
+    private List<String> refWorks = new ArrayList<>();//参考文献
 }
