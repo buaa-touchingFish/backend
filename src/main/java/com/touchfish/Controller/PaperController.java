@@ -55,12 +55,12 @@ public class PaperController {
     @PostMapping ("/search")
     @Operation(summary = "根据关键词查询文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\",\"institution\":\"机构\"")
-    public Result<List<PaperDoc>> searchKeyword(@RequestBody Map<String,String> json) {
-        Integer pageNum=Integer.parseInt(json.get("pageNum"));
-        String keyword=json.get("keyword");
-        String author=json.get("author");
-        String institution=json.get("institution");
-        String publisher=json.get("publisher");
+    public Result<List<PaperDoc>> searchKeyword(@RequestBody SearchInfo searchInfo) {
+        Integer pageNum=searchInfo.getPageNum();
+        String keyword=searchInfo.getKeyword();
+        String author=searchInfo.getAuthor();
+        String institution=searchInfo.getInstitution();
+        String publisher=searchInfo.getPublisher();
         Page<PaperDoc> page;
         if(pageNum<0)
             pageNum=0;

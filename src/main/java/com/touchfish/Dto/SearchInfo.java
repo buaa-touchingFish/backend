@@ -6,6 +6,7 @@ import java.util.Date;
 
 @Data
 public class SearchInfo {
+    int pageNum;
     String keyword;
     String author;
     String institution;
