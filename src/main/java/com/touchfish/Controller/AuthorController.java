@@ -35,16 +35,15 @@ public class AuthorController {
 
     @GetMapping
     @Operation(summary = "获取学者门户")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"author_id\":\"学者id\"")
-    public Result<AuthorHome> getAuthorHome(String author_id) {
+    public Result<AuthorHome> getAuthorHome(String author_id, String paper_id) {
         List<Paper> papers = new ArrayList<>();
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
         Author author = authorService.getById(author_id);
         if(author == null)
-            author = getAuthorFromOpenAlex(author_id);
+            author = getAuthorFromOpenAlex(author_id, paper_id);
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
-        for (String paper_id : authorPaper.getPapers()) {
-            Paper paper = paperService.getById(paper_id);
+        for (String author_paper_id : authorPaper.getPapers()) {
+            Paper paper = paperService.getById(author_paper_id);
             papers.add(paper);
             List<AuthorShip> authorships = paper.getAuthorships();
             authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
@@ -85,7 +84,7 @@ public class AuthorController {
         {
             Author author1 = authorService.getById(coAuthor.getId());
             if(author1 == null)
-                author1 = getAuthorFromOpenAlex(coAuthor.getId());
+                author1 = getAuthorFromOpenAlex(coAuthor.getId(), null);
             coAuthor.setDisplay_name(author1.getDisplay_name());
             if(author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
@@ -94,7 +93,9 @@ public class AuthorController {
         return Result.ok("查看学者门户成功", authorHome);
     }
 
-    public Author getAuthorFromOpenAlex(String author_id) {
+    public Author getAuthorFromOpenAlex(String author_id, String paper_id) {
+        if(paper_id != null)
+            authorPaperService.saveAuthorPaper(author_id, paper_id);
         Author author = authorService.updateAuthorFromOpenAlex(author_id);
         if (author.getLast_known_institution() != null) {
             Institution institution = institutionService.updateInstFromOpenAlex(author.getLast_known_institution().getId());

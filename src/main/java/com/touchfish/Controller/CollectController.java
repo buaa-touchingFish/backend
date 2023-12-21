@@ -66,7 +66,6 @@ public class CollectController {
 
     @GetMapping
     @Operation(summary = "获取收藏列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
     public Result<List<CollectInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
         return Result.ok("获取收藏列表成功", collects);
@@ -102,7 +101,6 @@ public class CollectController {
 
     @GetMapping("/label")
     @Operation(summary = "获取标签列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
     public Result<Label> getLabels(Integer user_id) {
         Label label = labelService.getById(user_id);
         return Result.ok("获取标签列表成功", label);
