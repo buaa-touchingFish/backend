@@ -2,13 +2,16 @@ package com.touchfish.Controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
-import com.touchfish.MiddleClass.LabelInfo;
+import com.touchfish.ReturnClass.ReturnCollectPaperInfo;
 import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
+import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.CollectCntImpl;
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
+import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +32,8 @@ public class CollectController {
     private LabelImpl labelService;
     @Autowired
     private CollectCntImpl collectCntService;
+    @Autowired
+    private PaperImpl paperService;
 
     @PostMapping
     @Operation(summary = "收藏文章")
@@ -66,9 +71,25 @@ public class CollectController {
 
     @GetMapping
     @Operation(summary = "获取收藏列表")
-    public Result<List<CollectInfo>> getCollectByUser(Integer user_id) {
+    public Result<List<ReturnCollectPaperInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
-        return Result.ok("获取收藏列表成功", collects);
+        List<ReturnCollectPaperInfo> returnCollectPaperInfos = new ArrayList<>();
+        collects = new ObjectMapper().convertValue(collects, new TypeReference<>() {
+        });
+        for(CollectInfo collectInfo:collects)
+        {
+            String paperId = collectInfo.getPaper_id();
+            Paper paper = paperService.getById(paperId);
+            List<String> authors = new ArrayList<>();
+            List<AuthorShip> authorships = paper.getAuthorships();
+            authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
+            });
+            for(AuthorShip authorShip: authorships)
+                authors.add(authorShip.getAuthor().getDisplay_name());
+            ReturnCollectPaperInfo returnCollectPaperInfo = new ReturnCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, paper.getPublisher().getDisplay_name(), paper.getCited_by_count(), collectInfo.getLabels());
+            returnCollectPaperInfos.add(returnCollectPaperInfo);
+        }
+        return Result.ok("获取收藏列表成功", returnCollectPaperInfos);
     }
 
     @PostMapping("/label")
