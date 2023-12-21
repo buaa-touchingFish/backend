@@ -13,9 +13,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Notice {
     @TableId(type = IdType.AUTO)
-    private int nid;
+    private int id;
+    /// 消息标题
+    private String title;
+    /// 消息内容
     private String content;
+    /// 创建时间
     private String create_time;
-    private int sender_id;
-    private String paper_id;
+    /// 消息通知的用户id
+    private int user_id;
+    /// 消息是否已读，true代表已读
+    private boolean read_status;
+
+    public Notice(String title, String content, String create_time, int user_id, boolean read_status) {
+        this.title = title;
+        this.content = content;
+        this.create_time = create_time;
+        this.user_id = user_id;
+        this.read_status = read_status;
+    }
 }
