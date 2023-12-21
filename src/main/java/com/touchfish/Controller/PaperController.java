@@ -2,7 +2,6 @@ package com.touchfish.Controller;
 
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dto.PaperInfo;
@@ -11,13 +10,10 @@ import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.PaperImpl;
-import com.touchfish.Tool.OpenAlex;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -26,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/paper")
@@ -84,7 +81,7 @@ public class PaperController {
             }
         });
         String s = JSONUtil.toJsonStr(paperInfo);
-        stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s);
+        stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s,1, TimeUnit.DAYS);
         return Result.ok("成功返回",paperInfo);
     }
 

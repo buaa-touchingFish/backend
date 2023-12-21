@@ -1,9 +1,6 @@
 package com.touchfish.Controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.CollectInfo;
-import com.touchfish.MiddleClass.LabelInfo;
 import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
 import com.touchfish.Service.impl.CollectCntImpl;
@@ -15,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
