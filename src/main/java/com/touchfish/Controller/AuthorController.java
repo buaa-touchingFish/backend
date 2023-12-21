@@ -1,5 +1,6 @@
 package com.touchfish.Controller;
 
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorHome;
@@ -10,13 +11,20 @@ import com.touchfish.Po.AuthorPaper;
 import com.touchfish.Po.Institution;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.*;
+import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/author")
@@ -32,14 +40,21 @@ public class AuthorController {
     private InstitutionImpl institutionService;
     @Autowired
     private InstitutionAuthorImpl institutionAuthorService;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @GetMapping
     @Operation(summary = "获取学者门户")
     public Result<AuthorHome> getAuthorHome(String author_id, String paper_id) {
+        String id = stringRedisTemplate.opsForValue().get(RedisKey.AUTHOR_KEY + author_id);
+        if (id != null) {
+            AuthorHome authorHome = JSONUtil.toBean(id, AuthorHome.class);
+            return Result.ok("查看学者门户成功", authorHome);
+        }
         List<Paper> papers = new ArrayList<>();
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
         Author author = authorService.getById(author_id);
-        if(author == null)
+        if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
         for (String author_paper_id : authorPaper.getPapers()) {
@@ -80,21 +95,22 @@ public class AuthorController {
             sortedCoAuthors.add(entry.getKey());
         }
         List<CoAuthor> returnCoAuthors = sortedCoAuthors.subList(0, Math.min(5, sortedCoAuthors.size()));
-        for(CoAuthor coAuthor:returnCoAuthors)
-        {
+        for (CoAuthor coAuthor : returnCoAuthors) {
             Author author1 = authorService.getById(coAuthor.getId());
-            if(author1 == null)
+            if (author1 == null)
                 author1 = getAuthorFromOpenAlex(coAuthor.getId(), null);
             coAuthor.setDisplay_name(author1.getDisplay_name());
-            if(author1.getLast_known_institution() != null)
+            if (author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
         }
         AuthorHome authorHome = new AuthorHome(author, papers, returnCoAuthors);
+        String s = JSONUtil.toJsonStr(authorHome);
+        stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s);
         return Result.ok("查看学者门户成功", authorHome);
     }
 
     public Author getAuthorFromOpenAlex(String author_id, String paper_id) {
-        if(paper_id != null)
+        if (paper_id != null)
             authorPaperService.saveAuthorPaper(author_id, paper_id);
         Author author = authorService.updateAuthorFromOpenAlex(author_id);
         if (author.getLast_known_institution() != null) {
