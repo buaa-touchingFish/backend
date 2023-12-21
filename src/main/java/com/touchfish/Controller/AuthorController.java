@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/author")
@@ -45,6 +46,7 @@ public class AuthorController {
 
     @GetMapping
     @Operation(summary = "获取学者门户")
+    //todo:coauthor拆出来
     public Result<AuthorHome> getAuthorHome(String author_id, String paper_id) {
         String id = stringRedisTemplate.opsForValue().get(RedisKey.AUTHOR_KEY + author_id);
         if (id != null) {
@@ -105,9 +107,11 @@ public class AuthorController {
         }
         AuthorHome authorHome = new AuthorHome(author, papers, returnCoAuthors);
         String s = JSONUtil.toJsonStr(authorHome);
-        stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s);
+        stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
         return Result.ok("查看学者门户成功", authorHome);
     }
+
+
 
     public Author getAuthorFromOpenAlex(String author_id, String paper_id) {
         if (paper_id != null)
