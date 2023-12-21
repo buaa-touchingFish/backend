@@ -14,9 +14,11 @@ import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.AuthorPaper;
+import com.touchfish.Po.Comment;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.AuthorPaperImpl;
 import com.touchfish.Po.PaperDoc;
+import com.touchfish.Service.impl.CommentImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
@@ -56,6 +58,8 @@ public class PaperController {
     private ElasticSearchRepository es;
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
+
+    @Autowired
     private PaperImpl paperImpl;
 
     @Autowired
@@ -73,6 +77,14 @@ public class PaperController {
     @Operation(summary = "点击获取单个文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
+        ThreadUtil.execute(()->{
+            String sumLook = stringRedisTemplate.opsForValue().get(RedisKey.SUM_LOOK_KEY);
+            Integer sum = 1;
+            if (sumLook != null){
+                sum = Integer.parseInt(sumLook)+1;
+            }
+            stringRedisTemplate.opsForValue().set(RedisKey.SUM_LOOK_KEY,sum.toString());
+        });
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
         if (id1 != null){
             PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
@@ -273,5 +285,12 @@ public class PaperController {
     @Operation(summary = "获取文献总数")
     public Result<Integer> getCount(){
         return Result.ok("成功返回",7541000);
+    }
+
+    @GetMapping("/sumlook")
+    @Operation(summary = "获取文献总浏览数")
+    public Result<Integer> getSumLook(){
+        Integer sumLook = Integer.parseInt(stringRedisTemplate.opsForValue().get(RedisKey.SUM_LOOK_KEY));
+        return Result.ok("成功返回",sumLook);
     }
 }

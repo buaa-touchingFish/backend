@@ -94,7 +94,7 @@ public class UserController {
     @PostMapping("/login")
     @Operation(summary = "登录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户名 密码")
-    public Result<String> login(@RequestBody LoginInfo loginInfo){
+    public Result<RegisterSuccess> login(@RequestBody LoginInfo loginInfo){
         if (!user.lambdaQuery().eq(User::getUsername,loginInfo.getUsername()).exists()){
             return Result.fail("用户名不存在");
         }
@@ -106,7 +106,8 @@ public class UserController {
         String jwtToken = JWT.generateJwtToken(name);
         String jsonstr = JSONUtil.toJsonStr(myUser);
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
-        return Result.ok("登录成功",jwtToken);
+
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid()));
     }
 
     @PostMapping("/findpwd")

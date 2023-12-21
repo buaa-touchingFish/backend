@@ -111,11 +111,6 @@ public class OpenAlex {
     }
 
 
-
-
-
-
-
     public static void main(String[] args) {
         String table, id;
 //        table = "author";
