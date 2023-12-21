@@ -1,6 +1,7 @@
 package com.touchfish.Controller;
 
 
+import cn.hutool.core.convert.Convert;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.touchfish.Dao.ElasticSearchRepository;
 import com.touchfish.Dto.SearchInfo;
@@ -24,10 +25,7 @@ import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @RestController
@@ -81,6 +79,9 @@ public class PaperController {
         List<PaperDoc>paperDocs=new ArrayList<>();
         for(PaperDoc paperDoc:page) {
             paperDocs.add(paperDoc);
+            String b="[{\"author\": {\"id\": \"A5046060925\", \"display_name\": \"Laura Mureşan\"}, \"institutions\": [{\"id\": \"I3125347698\", \"display_name\": \"Babeș-Bolyai University\"}]}, {\"author\": {\"id\": \"A5042327654\", \"display_name\": \"A.I. Cadiş\"}, \"institutions\": [{\"id\": \"I3125347698\", \"display_name\": \"Babeș-Bolyai University\"}]}, {\"author\": {\"id\": \"A5075550420\", \"display_name\": \"I. Perhaiţa\"}, \"institutions\": [{\"id\": \"I3125347698\", \"display_name\": \"Babeș-Bolyai University\"}]}, {\"author\": {\"id\": \"A5033290895\", \"display_name\": \"O. Ponta\"}, \"institutions\": [{\"id\": \"I3125347698\", \"display_name\": \"Babeș-Bolyai University\"}]}, {\"author\": {\"id\": \"A5064289237\", \"display_name\": \"O. Pană\"}, \"institutions\": [{\"id\": \"I4210148481\", \"display_name\": \"National Institute for Research and Development of Isotopic and Molecular Technologies\"}]}, {\"author\": {\"id\": \"A5044246727\", \"display_name\": \"L. Trinkler\"}, \"institutions\": [{\"id\": \"I91123046\", \"display_name\": \"University of Latvia\"}]}, {\"author\": {\"id\": \"A5023800736\", \"display_name\": \"B. Bērziņa\"}, \"institutions\": [{\"id\": \"I91123046\", \"display_name\": \"University of Latvia\"}]}, {\"author\": {\"id\": \"A5055791297\", \"display_name\": \"V. Korsaks\"}, \"institutions\": [{\"id\": \"I91123046\", \"display_name\": \"University of Latvia\"}]}]";
+            List<String>a= Convert.toList(String.class,b);
+            System.out.println(a);
         }
         return Result.ok("查询成功",paperDocs);
     }
@@ -105,9 +106,9 @@ public class PaperController {
     @Operation(summary = "高级搜索")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\"")
     public Result<List<PaperDoc>> ultraSearch(@RequestBody SearchInfo searchInfo){
-        long a=es.count();
+        /*long a=es.count();
         Query.findAll();
-        System.out.println(a);
+        System.out.println(a);*/
 
         //count.query();
         //String author=json.get("author");

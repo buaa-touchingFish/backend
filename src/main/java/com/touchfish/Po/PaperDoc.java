@@ -23,8 +23,7 @@ public class PaperDoc {
     @Field(name = "authorships",type =FieldType.Text)
     private String authorships;
     @Field(name = "keywords",type =FieldType.Text)
-
-    private List<String> keywords;
+    private String keywords;
     @Field(name = "abstract",type = FieldType.Text)
     private String abstracts;
     private Integer cited_by_count;

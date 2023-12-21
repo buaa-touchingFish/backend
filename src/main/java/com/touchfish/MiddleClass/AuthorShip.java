@@ -8,6 +8,6 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class AuthorShip {
-    private List<DisplayInfo> institutions;
     private DisplayInfo author;
+    private List<DisplayInfo> institutions;
 }

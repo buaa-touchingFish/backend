@@ -45,4 +45,9 @@ public class Paper {
     private  String lan;
     private  String issn;
     private  Boolean is_active;
+    public Paper(PaperDoc paperDoc){
+        this.id=paperDoc.getId();
+        this.title=paperDoc.getTitle();
+
+    }
 }
