@@ -1,14 +1,8 @@
 package com.touchfish.Controller;
 
 import com.touchfish.Dto.ClaimResultInfo;
-import com.touchfish.Po.Author;
-import com.touchfish.Po.ClaimRequest;
-import com.touchfish.Po.Notice;
-import com.touchfish.Po.User;
-import com.touchfish.Service.impl.AuthorImpl;
-import com.touchfish.Service.impl.ClaimRequestImpl;
-import com.touchfish.Service.impl.NoticeImpl;
-import com.touchfish.Service.impl.UserImpl;
+import com.touchfish.Po.*;
+import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import com.touchfish.Tool.UserContext;
@@ -33,6 +27,8 @@ public class AdminController {
     private AuthorImpl author;
     @Autowired
     private NoticeImpl notice;
+    @Autowired
+    private PaperAppealImpl paperAppeal;
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -102,6 +98,19 @@ public class AdminController {
                 UserContext.getUser().getUid()).list();
         return Result.ok("查询管理员处理的认领门户申请成功", ClaimedList);
     }
+
+
+
+    @GetMapping ("/unappealed")
+    @LoginCheck
+    @Operation(summary = "获取当前管理员处理的认领申请")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "不需要")
+    public Result<List<PaperAppeal>> getUnhandledAppeal(){
+        List<PaperAppeal> appealList = paperAppeal.lambdaQuery().eq(PaperAppeal::getStatus, false).list();
+        return Result.ok("查询未处理申诉成功", appealList);
+    }
+
+//    public Result<>
 
 
 }

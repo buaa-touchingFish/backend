@@ -3,11 +3,15 @@ package com.touchfish.Po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@TableName("claim_request")
-public class ClaimRequest {
+@TableName(value = "paper_appeal", autoResultMap = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class PaperAppeal {
     @TableId(type = IdType.AUTO)
     int id;
     int applicant_id;
@@ -16,17 +20,13 @@ public class ClaimRequest {
 
     String create_time;
     String handle_time;
-    String author_id;
+    String paper_id;
 
-    String photo_url;
-
-
-    public ClaimRequest(int applicant_id, String create_time, String author_id) {
+    public PaperAppeal(int applicant_id, String create_time, String paper_id) {
         this.applicant_id = applicant_id;
         this.create_time = create_time;
-        this.author_id = author_id;
+        this.paper_id = paper_id;
 
         this.status = 0;
     }
-
 }
