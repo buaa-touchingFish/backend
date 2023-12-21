@@ -91,7 +91,7 @@ public class CollectImpl extends ServiceImpl<CollectMapper, Collect> implements 
         return true;
     }
 
-    public boolean deleteLabel(Integer user_id, String paper_id, String label) {
+    public void deleteLabel(Integer user_id, String paper_id, String label) {
         Collect collect = getById(user_id);
         ObjectMapper mapper = new ObjectMapper();
         List<CollectInfo> collectInfos = collect.getCollectInfos();
@@ -99,14 +99,11 @@ public class CollectImpl extends ServiceImpl<CollectMapper, Collect> implements 
         });
         for (CollectInfo collectInfo : list) {
             if (collectInfo.getPaper_id().equals(paper_id)) {
-                if (!collectInfo.getLabels().contains(label))
-                    return false;
                 collectInfo.getLabels().remove(label);
                 break;
             }
         }
         collect.setCollectInfos(list);
         updateById(collect);
-        return true;
     }
 }
