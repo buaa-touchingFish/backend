@@ -102,6 +102,9 @@ public class PaperController {
             }
             List<AuthorShip> authorships1 = one.getAuthorships();
             List<AuthorShip> authorShipList1 = mapper.convertValue(authorships1, new TypeReference<>() {});
+            for (AuthorShip authorShip:authorShipList1){
+                
+            }
             relWork.setAbstract(one.getAbstract());
             relWork.setId(one.getId());
             relWork.setTitle(one.getTitle());
