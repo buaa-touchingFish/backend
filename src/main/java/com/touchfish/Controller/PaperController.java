@@ -1,6 +1,7 @@
 package com.touchfish.Controller;
 
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.touchfish.Dao.ElasticSearchRepository;
 import com.touchfish.Dto.SearchInfo;
 import com.touchfish.Po.Paper;
@@ -14,7 +15,12 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.repository.support.SimpleElasticsearchRepository;
+import org.springframework.data.elasticsearch.core.query.BaseQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +42,6 @@ public class PaperController {
     private ElasticSearchRepository es;
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
-
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
     /*@GetMapping("/id")
@@ -100,6 +105,11 @@ public class PaperController {
     @Operation(summary = "高级搜索")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\"")
     public Result<List<PaperDoc>> ultraSearch(@RequestBody SearchInfo searchInfo){
+        long a=es.count();
+        Query.findAll();
+        System.out.println(a);
+
+        //count.query();
         //String author=json.get("author");
         //Pageable pageable = PageRequest.of(0,pageSize);
 
@@ -109,6 +119,7 @@ public class PaperController {
             paperDocs.add(paperDoc);
         }*/
         //return Result.ok("查询成功",paperDocs);
+
         return Result.ok("");
     }
 }

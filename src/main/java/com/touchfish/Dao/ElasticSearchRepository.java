@@ -31,4 +31,5 @@ public interface ElasticSearchRepository extends ElasticsearchRepository<PaperDo
     Page<PaperDoc> findByAuthorships(String author,Pageable pageable);
     Page<PaperDoc> findByAuthorshipsAndAbstractsIsNotEmpty(String author,Pageable pageable);
     Page<PaperDoc> findByPublisher(String publisher,Pageable pageable);
+
 }

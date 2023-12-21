@@ -21,9 +21,10 @@ public class PaperDoc {
     @Field(name = "title",type =FieldType.Text)
     private String title;
     @Field(name = "authorships",type =FieldType.Text)
-
     private String authorships;
-    private String keywords;
+    @Field(name = "keywords",type =FieldType.Text)
+
+    private List<String> keywords;
     @Field(name = "abstract",type = FieldType.Text)
     private String abstracts;
     private Integer cited_by_count;

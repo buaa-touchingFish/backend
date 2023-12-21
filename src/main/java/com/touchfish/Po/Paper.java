@@ -10,6 +10,8 @@ import com.touchfish.MiddleClass.DisplayInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.List;
 
@@ -17,8 +19,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value = "paper",autoResultMap = true)
+//@Document(indexName = "papers")
 public class Paper {
     @TableId(type = IdType.INPUT)
+   // @Id
     private String id;
     private String title;
     @TableField(typeHandler = JacksonTypeHandler.class)
