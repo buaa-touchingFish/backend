@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ClaimResultInfo {
-    boolean result;
     int claimRequestId;
+    boolean result;
 }
