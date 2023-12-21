@@ -7,6 +7,7 @@ import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,8 +40,8 @@ public class NoticeController {
         return formatter.format(date);
     }
     @PostMapping("/create")
-//    @LoginCheck
-    @Operation(summary = "创建消息")
+    @LoginCheck
+    @Operation(summary = "创建消息", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "消息标题 消息内容 接收者id")
     public Result<String> createNotice(@RequestBody NoticeInfo noticeInfo) {
         try{
@@ -55,8 +56,8 @@ public class NoticeController {
     }
 
     @PostMapping("/get")
-//    @LoginCheck
-    @Operation(summary = "获取用户所有消息（按时间从新到旧排序）")
+    @LoginCheck
+    @Operation(summary = "获取用户所有消息（按时间从新到旧排序）", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id")
     public Result<List<Notice>> getNoticesByUid(@RequestBody Map<String, String> map){
         List<Notice> userNoticeList = notice.lambdaQuery().eq(Notice::getUser_id, map.get("uid")).list();
@@ -64,8 +65,8 @@ public class NoticeController {
     }
 
     @PostMapping("/update")
-//    @LoginCheck
-    @Operation(summary = "更新消息为已读")
+    @LoginCheck
+    @Operation(summary = "更新消息为已读", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "消息id")
     public Result<String> updateNoticeStatus(@RequestBody Map<String, String> map) {
         Notice targetNotice = notice.getBaseMapper().selectById(map.get("id"));

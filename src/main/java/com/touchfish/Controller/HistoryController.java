@@ -7,6 +7,7 @@ import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +38,7 @@ public class HistoryController {
 
     @PostMapping("/create")
     @LoginCheck
-    @Operation(summary = "创建浏览记录，如果已存在则更新")
+    @Operation(summary = "创建浏览记录，如果已存在则更新", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "浏览的文献id")
     public Result<String> createHistory(@RequestBody Map<String, String> map){
         History formerHistory = history.lambdaQuery().eq(History::getId, map.get("paper_id")).one();
@@ -60,7 +61,7 @@ public class HistoryController {
 
     @PostMapping("/get")
     @LoginCheck
-    @Operation(summary = "获取用户浏览记录")
+    @Operation(summary = "获取用户浏览记录", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id")
     public Result<List<History>> getHistoriesByUid(@RequestBody Map<String, String> map){
         List<History> historyList = history.lambdaQuery().eq(History::getUser_id, map.get("uid")).list();
