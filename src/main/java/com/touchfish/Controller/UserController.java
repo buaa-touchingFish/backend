@@ -160,7 +160,7 @@ public class UserController {
     @LoginCheck
     @Operation(summary = "认领学者门户确认邮箱并发送身份证照片",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码  照片")
-    public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha){
+    public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha) throws IOException {
         User now_user = UserContext.getUser();
         String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+email);
         if (StrUtil.isEmpty(captcha)){
@@ -169,10 +169,18 @@ public class UserController {
         if (!captcha.equals(mycaptcha)){
             return Result.fail("验证码错误");
         }
-//        ClaimRequest claimRequest = new ClaimRequest()
-
+        String fileName = file.getOriginalFilename();
+        InputStream inputStream = file.getInputStream();
+        String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
+        ClaimRequest claimRequest = new ClaimRequest(now_user.getUid(),getTimeNow(),id,upload);
+        boolean save = claimRequestImpl.save(claimRequest);
         //作者表要更新
-        return Result.ok("等待管理员审核");
+        if (save){
+            return Result.ok("等待管理员审核");
+        }else{
+            return Result.fail("网络错误，请稍后再试");
+        }
+
     }
 
 
