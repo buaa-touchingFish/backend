@@ -33,8 +33,12 @@ spring:
     password: lwrlnvplixlkfegd
     port: 587
     default-encoding: UTF-8
+  elasticsearch:
+    uris: http://121.36.81.4:9200
+    username: elastic
+    password: fish@123
 
 mybatis-plus:
   configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: false

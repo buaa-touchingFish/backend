@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dao.InstitutionAuthorMapper;
 import com.touchfish.Po.InstitutionAuthor;
-import com.touchfish.Po.Label;
 import com.touchfish.Service.IInstitutionAuthor;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +13,7 @@ import java.util.List;
 
 @Service
 public class InstitutionAuthorImpl extends ServiceImpl<InstitutionAuthorMapper, InstitutionAuthor> implements IInstitutionAuthor {
-    public boolean saveInstAuthor(String inst_id, String author_id) {
-        System.out.println(inst_id+ " " + author_id);
+    public void saveInstAuthor(String inst_id, String author_id) {
         InstitutionAuthor institutionAuthor = getById(inst_id);
         if(institutionAuthor == null) {
             institutionAuthor = new InstitutionAuthor(inst_id, new ArrayList<>());
@@ -26,10 +24,9 @@ public class InstitutionAuthorImpl extends ServiceImpl<InstitutionAuthorMapper, 
             authorIds = new ObjectMapper().convertValue(authorIds, new TypeReference<>() {
             });
             if(authorIds.contains(author_id))
-                return false;
+                return;
             institutionAuthor.getAuthor_ids().add(author_id);
             updateById(institutionAuthor);
         }
-        return true;
     }
 }

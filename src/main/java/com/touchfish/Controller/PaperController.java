@@ -1,5 +1,10 @@
 package com.touchfish.Controller;
 
+
+import cn.hutool.core.convert.Convert;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.touchfish.Dao.ElasticSearchRepository;
+import com.touchfish.Dto.SearchInfo;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,6 +16,7 @@ import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.AuthorPaper;
 import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.AuthorPaperImpl;
+import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
@@ -19,9 +25,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.repository.support.SimpleElasticsearchRepository;
+import org.springframework.data.elasticsearch.core.query.BaseQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +48,14 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/paper")
 @Tag(name = "论文相关接口")
 public class PaperController {
+    Integer pageSize=100;
 
     @Autowired
+    private PaperImpl paper;
+    @Autowired
+    private ElasticSearchRepository es;
+    @Autowired
+    private ElasticsearchOperations elasticsearchOperations;
     private PaperImpl paperImpl;
 
     @Autowired
@@ -40,6 +63,11 @@ public class PaperController {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    /*@GetMapping("/id")
+    public Result<PaperDoc>getWork(){
+        System.out.println(es.findById("W2029916517"));
+        return Result.ok("200");
+    }*/
 
     @PostMapping ("/single")
     @Operation(summary = "点击获取单个文献")
@@ -110,7 +138,71 @@ public class PaperController {
         stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s,1, TimeUnit.DAYS);
         return Result.ok("成功返回",paperInfo);
     }
+    @PostMapping ("/search")
+    @Operation(summary = "根据关键词查询文献")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\",\"institution\":\"机构\"")
+    public Result<List<Paper>> searchKeyword(@RequestBody SearchInfo searchInfo) {
+        Integer pageNum=searchInfo.getPageNum();
+        String keyword=searchInfo.getKeyword();
+        String author=searchInfo.getAuthor();
+        String institution=searchInfo.getInstitution();
+        String publisher=searchInfo.getPublisher();
+        Page<PaperDoc> page;
+        if(pageNum<0)
+            pageNum=0;
+        Pageable pageable = PageRequest.of(pageNum,pageSize);
+        if(!keyword.equals(""))
+            page = es.findByInformation(keyword,pageable);
+        else if(!author.equals(""))
+            page=es.findByAuthorships(author,pageable);
+        else if(!institution.equals(""))
+            page=es.findByAuthorships(institution,pageable);
+        else
+            page=es.findByPublisher(publisher,pageable);
+        List<Paper>papers=new ArrayList<>();
+        for(PaperDoc paperDoc:page) {
+            papers.add(new Paper(paperDoc));
+        }
+        return Result.ok("查询成功",papers);
+    }
+    //关键词作者刊物年份
+    /*@PostMapping("/author")
+    @Operation(summary = "根据作者查文献")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"author\":\"作者姓名\"")
+    public Result<List<PaperDoc>> searchAuthor(@RequestBody Map<String,String> json){
+        Integer pageNum=Integer.parseInt(json.get("pageNum"));
+        String content=json.get("author");
+        if(pageNum<0)
+            pageNum=0;
+        Pageable pageable = PageRequest.of(pageNum,pageSize);
+        Page<PaperDoc> page = es.findByAuthorships(content,pageable);
+        List<PaperDoc>paperDocs=new ArrayList<>();
+        for(PaperDoc paperDoc:page) {
+            paperDocs.add(paperDoc);
+        }
+        return Result.ok("查询成功",paperDocs);
+    }*/
+    @PostMapping("/ultraSearch")
+    @Operation(summary = "高级搜索")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\"")
+    public Result<List<PaperDoc>> ultraSearch(@RequestBody SearchInfo searchInfo){
+        /*long a=es.count();
+        Query.findAll();
+        System.out.println(a);*/
 
+        //count.query();
+        //String author=json.get("author");
+        //Pageable pageable = PageRequest.of(0,pageSize);
+
+        //Page<PaperDoc> page=es.findByAuthorships(author,pageable);
+        /*List<PaperDoc>paperDocs=new ArrayList<>();
+        for(PaperDoc paperDoc:page) {
+            paperDocs.add(paperDoc);
+        }*/
+        //return Result.ok("查询成功",paperDocs);
+
+        return Result.ok("");
+    }
     @PostMapping("/getRef")
     @Operation(summary = "点击获取文献的参考文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"ref\":[id1,id2,id3....]")
