@@ -59,7 +59,8 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
         paper.setRelated_works(get_related_work(jsonNode));
 
         if (jsonNode.get("title")!=null){
-            paper.setTitle(jsonNode.get("title").asText());
+            String s = jsonNode.get("title").asText();
+            paper.setTitle(s.substring(0,Math.min(s.length()-1,255)));
         }
         return paper;
     }

@@ -48,6 +48,8 @@ public class UserController {
     private UserImpl user;
 
     @Autowired
+    private AuthorImpl authorImpl;
+    @Autowired
     private ClaimRequestImpl claimRequestImpl;
     @Autowired
     private QiNiuOssUtil qiNiuOssUtil;
@@ -138,13 +140,13 @@ public class UserController {
         else return Result.fail("修改密码失败");
     }
 
-    @PostMapping("/claincaptcha1")
+    @PostMapping("/claimcaptcha1")
     @LoginCheck
     @Operation(summary = "认领学者门户发送邮箱",security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱")
-    public Result<String>  claimHomeCaptcha1(@RequestBody ClaimInfo claimInfo){
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱 \"email\":")
+    public Result<String>  claimHomeCaptcha1(@RequestBody Map<String,String> mp){
         User now_user = UserContext.getUser();
-        String email =  claimInfo.getEmail();
+        String email =  mp.get("email");
         email = email.replace("\"","");
         boolean isEmail = Validator.isEmail(email);
         if (!isEmail|| !captcha.isValidClaim(email)) return  Result.fail("验证码格式错误");
@@ -156,12 +158,19 @@ public class UserController {
         }
     }
 
-    @PostMapping("/claincaptcha2")
+    @PostMapping("/claimcaptcha2")
     @LoginCheck
     @Operation(summary = "认领学者门户确认邮箱并发送身份证照片",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码  照片")
     public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha) throws IOException {
         User now_user = UserContext.getUser();
+        if (now_user.getAuthor_id()!=null){
+            return Result.fail("你已认领过门户");
+        }
+        Author one = authorImpl.lambdaQuery().eq(Author::getId, id).one();
+        if (one.getClaim_uid() != null){
+            return Result.fail("该学者门户已被认领");
+        }
         String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+email);
         if (StrUtil.isEmpty(captcha)){
             return Result.fail("验证码已失效");
@@ -180,10 +189,7 @@ public class UserController {
         }else{
             return Result.fail("网络错误，请稍后再试");
         }
-
     }
-
-
 
 
     @PostMapping("/upload")
