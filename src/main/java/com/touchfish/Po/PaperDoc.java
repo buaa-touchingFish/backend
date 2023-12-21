@@ -35,8 +35,8 @@ public class PaperDoc {
     private String type;
 
     private String publisher;
-    private String referenced_works;
-    private String related_works;
+    private List<String> referenced_works;
+    private List<String> related_works;
     private String information;
     private String lan;
     private String issn;
