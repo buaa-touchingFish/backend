@@ -10,8 +10,10 @@ import com.qiniu.util.Auth;
 import com.touchfish.Dao.AuthorMapper;
 import com.touchfish.Dto.*;
 import com.touchfish.Po.Author;
+import com.touchfish.Po.ClaimRequest;
 import com.touchfish.Po.User;
 import com.touchfish.Service.impl.AuthorImpl;
+import com.touchfish.Service.impl.ClaimRequestImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.*;
 import io.lettuce.core.ScriptOutputType;
@@ -29,10 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -47,9 +47,17 @@ public class UserController {
     @Autowired
     private UserImpl user;
 
-
+    @Autowired
+    private ClaimRequestImpl claimRequestImpl;
     @Autowired
     private QiNiuOssUtil qiNiuOssUtil;
+
+
+    private static String getTimeNow(){
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(date);
+    }
 
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
@@ -130,11 +138,11 @@ public class UserController {
         else return Result.fail("修改密码失败");
     }
 
-    @PostMapping("/clainpage1")
+    @PostMapping("/claincaptcha1")
     @LoginCheck
     @Operation(summary = "认领学者门户发送邮箱",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱")
-    public Result<String>  claimHomePage1(@RequestBody ClaimInfo claimInfo){
+    public Result<String>  claimHomeCaptcha1(@RequestBody ClaimInfo claimInfo){
         User now_user = UserContext.getUser();
         String email =  claimInfo.getEmail();
         email = email.replace("\"","");
@@ -148,26 +156,27 @@ public class UserController {
         }
     }
 
-    @PostMapping("/clainpage2")
+    @PostMapping("/claincaptcha2")
     @LoginCheck
-    @Operation(summary = "认领学者门户确认邮箱",security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码")
-    public Result<String>  claimHomePage2(@RequestBody ClaimInfo claimInfo){
+    @Operation(summary = "认领学者门户确认邮箱并发送身份证照片",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码  照片")
+    public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha){
         User now_user = UserContext.getUser();
-        String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+claimInfo.getEmail());
+        String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+email);
         if (StrUtil.isEmpty(captcha)){
             return Result.fail("验证码已失效");
         }
-        if (!captcha.equals(claimInfo.getCaptcha())){
+        if (!captcha.equals(mycaptcha)){
             return Result.fail("验证码错误");
         }
-        boolean flag = user.lambdaUpdate().eq(User::getUsername, now_user.getUsername()).set(User::getAuthor_id, claimInfo.getAuthor_id()).update();
-        if (!flag){
-            return  Result.fail("数据库出错,更新数据失败");
-        }
+//        ClaimRequest claimRequest = new ClaimRequest()
+
         //作者表要更新
-        return Result.ok("门户认领成功");
+        return Result.ok("等待管理员审核");
     }
+
+
+
 
     @PostMapping("/upload")
     @LoginCheck
