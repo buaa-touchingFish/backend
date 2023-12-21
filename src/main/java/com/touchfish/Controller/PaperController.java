@@ -8,13 +8,16 @@ import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
+import com.touchfish.Po.AuthorPaper;
 import com.touchfish.Po.Paper;
+import com.touchfish.Service.impl.AuthorPaperImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +34,9 @@ public class PaperController {
 
     @Autowired
     private PaperImpl paperImpl;
+
+    @Autowired
+    private AuthorPaperImpl authorPaperImpl;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -71,6 +77,16 @@ public class PaperController {
             for (String id:referenced_works){
                 Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
+                List<AuthorShip> authorShipList1 = one.getAuthorships();
+                for (AuthorShip authorShip:authorShipList1){
+                    if (authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId,authorShip.getAuthor().id).exists()){
+                        AuthorPaper one1 = authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId, authorShip.getAuthor().id).one();
+                        if (!one1.getPapers().contains(one.getId())){
+                            one1.getPapers().add(one.getId());
+                        }
+                        authorPaperImpl.updateById(one1);
+                    }
+                }
             }
         });
 
@@ -78,6 +94,16 @@ public class PaperController {
             for (String id:related_works){
                 Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
+                List<AuthorShip> authorShipList1 = one.getAuthorships();
+                for (AuthorShip authorShip:authorShipList1){
+                    if (authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId,authorShip.getAuthor().id).exists()){
+                        AuthorPaper one1 = authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId, authorShip.getAuthor().id).one();
+                        if (!one1.getPapers().contains(one.getId())){
+                            one1.getPapers().add(one.getId());
+                        }
+                        authorPaperImpl.updateById(one1);
+                    }
+                }
             }
         });
         String s = JSONUtil.toJsonStr(paperInfo);
@@ -102,9 +128,6 @@ public class PaperController {
             }
             List<AuthorShip> authorships1 = one.getAuthorships();
             List<AuthorShip> authorShipList1 = mapper.convertValue(authorships1, new TypeReference<>() {});
-            for (AuthorShip authorShip:authorShipList1){
-                
-            }
             relWork.setAbstract(one.getAbstract());
             relWork.setId(one.getId());
             relWork.setTitle(one.getTitle());
@@ -152,5 +175,11 @@ public class PaperController {
             ans.add(relWork);
         }
         return Result.ok("成功返回",ans);
+    }
+
+    @GetMapping()
+    @Operation(summary = "获取文献总数")
+    public Result<Integer> getCount(){
+        return Result.ok("成功返回",7541000);
     }
 }
