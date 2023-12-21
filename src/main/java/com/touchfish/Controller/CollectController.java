@@ -2,16 +2,22 @@ package com.touchfish.Controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
-import com.touchfish.MiddleClass.LabelInfo;
+import com.touchfish.ReturnClass.ReturnCollectPaperInfo;
 import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
+import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.CollectCntImpl;
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
+import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,9 +35,12 @@ public class CollectController {
     private LabelImpl labelService;
     @Autowired
     private CollectCntImpl collectCntService;
+    @Autowired
+    private PaperImpl paperService;
 
     @PostMapping
-    @Operation(summary = "收藏文章")
+    @LoginCheck
+    @Operation(summary = "收藏文章", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\"")
     public Result<String> saveCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
@@ -50,7 +59,8 @@ public class CollectController {
     }
 
     @DeleteMapping
-    @Operation(summary = "取消收藏")
+    @LoginCheck
+    @Operation(summary = "取消收藏", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\"")
     public Result<String> deleteCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
@@ -65,15 +75,32 @@ public class CollectController {
     }
 
     @GetMapping
-    @Operation(summary = "获取收藏列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
-    public Result<List<CollectInfo>> getCollectByUser(Integer user_id) {
+    @LoginCheck
+    @Operation(summary = "获取收藏列表", security = {@SecurityRequirement(name = "bearer-key")})
+    public Result<List<ReturnCollectPaperInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
-        return Result.ok("获取收藏列表成功", collects);
+        List<ReturnCollectPaperInfo> returnCollectPaperInfos = new ArrayList<>();
+        collects = new ObjectMapper().convertValue(collects, new TypeReference<>() {
+        });
+        for(CollectInfo collectInfo:collects)
+        {
+            String paperId = collectInfo.getPaper_id();
+            Paper paper = paperService.getById(paperId);
+            List<String> authors = new ArrayList<>();
+            List<AuthorShip> authorships = paper.getAuthorships();
+            authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
+            });
+            for(AuthorShip authorShip: authorships)
+                authors.add(authorShip.getAuthor().getDisplay_name());
+            ReturnCollectPaperInfo returnCollectPaperInfo = new ReturnCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, paper.getPublisher().getDisplay_name(), paper.getCited_by_count(), collectInfo.getLabels());
+            returnCollectPaperInfos.add(returnCollectPaperInfo);
+        }
+        return Result.ok("获取收藏列表成功", returnCollectPaperInfos);
     }
 
     @PostMapping("/label")
-    @Operation(summary = "添加标签")
+    @LoginCheck
+    @Operation(summary = "添加标签", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\", \"label_name\":\"标签名称\"")
     public Result<String> addLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
@@ -87,7 +114,8 @@ public class CollectController {
     }
 
     @DeleteMapping("/label")
-    @Operation(summary = "删除标签")
+    @LoginCheck
+    @Operation(summary = "删除标签", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\", \"label_name\":\"标签名称\"")
     public Result<String> deleteLabel(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
@@ -101,8 +129,8 @@ public class CollectController {
     }
 
     @GetMapping("/label")
-    @Operation(summary = "获取标签列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
+    @LoginCheck
+    @Operation(summary = "获取标签列表", security = {@SecurityRequirement(name = "bearer-key")})
     public Result<Label> getLabels(Integer user_id) {
         Label label = labelService.getById(user_id);
         return Result.ok("获取标签列表成功", label);

@@ -1,5 +1,6 @@
 package com.touchfish.Po;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -11,16 +12,24 @@ import com.touchfish.MiddleClass.DisplayInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value = "paper",autoResultMap = true)
+//@Document(indexName = "papers")
 public class Paper {
     @TableId(type = IdType.INPUT)
+   // @Id
     private String id;
     private String title;
     @TableField(typeHandler = JacksonTypeHandler.class)
@@ -43,4 +52,19 @@ public class Paper {
     private  String lan;
     private  String issn;
     private  Boolean is_active;
+    public Paper(PaperDoc paperDoc){
+        id=paperDoc.getId();
+        title=paperDoc.getTitle();
+        Pattern pattern=Pattern.compile("(\\{(?:(?!\\]\\}).)*?\\]\\})");
+        Matcher matcher=pattern.matcher(paperDoc.getAuthorships());
+        authorships=new ArrayList<>();
+        while (matcher.find())
+            authorships.add(JSONUtil.toBean(matcher.group(),AuthorShip.class));
+        keywords= Arrays.asList(paperDoc.getKeywords().substring(1,paperDoc.getKeywords().length()-1).split(","));
+        Abstract=paperDoc.getAbstracts();
+        cited_by_count=paperDoc.getCited_by_count();
+        doi=paperDoc.getDoi();
+        publication_date=paperDoc.getPublication_date();
+        type=paperDoc.getType();
+    }
 }

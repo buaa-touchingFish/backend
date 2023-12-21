@@ -1,12 +1,21 @@
 package com.touchfish.Service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.touchfish.Dao.ElasticSearchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.touchfish.Dao.PaperMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.DisplayInfo;
 import com.touchfish.Po.Paper;
+import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.IPaper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 import com.touchfish.Tool.OpenAlex;
 import org.springframework.stereotype.Service;
 
