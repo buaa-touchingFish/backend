@@ -111,8 +111,6 @@ public class AuthorController {
         return Result.ok("查看学者门户成功", authorHome);
     }
 
-
-
     public Author getAuthorFromOpenAlex(String author_id, String paper_id) {
         if (paper_id != null)
             authorPaperService.saveAuthorPaper(author_id, paper_id);
