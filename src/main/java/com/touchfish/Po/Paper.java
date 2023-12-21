@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.DisplayInfo;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value = "paper",autoResultMap = true)
@@ -36,7 +38,7 @@ public class Paper {
     private List<String> keywords;
     @TableField("abstract")
     private String Abstract;
-    private Integer cited_by_count;
+    private Integer cited_by_count = 0;
     private String oa_url;
     private String doi;
     private String publication_date;

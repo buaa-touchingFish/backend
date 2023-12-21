@@ -101,8 +101,9 @@ public class UserController {
 
     @PostMapping("/findpwd")
     @Operation(summary = "修改/找回密码时发送验证码")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱")
-    public Result<String> findPwd(@RequestBody String email){
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "验证码 \"email\":")
+    public Result<String> findPwd(@RequestBody Map<String,String> json){
+        String email = json.get("email");
         email = email.replace("\"","");
         if (!user.lambdaQuery().eq(User::getEmail,email).exists()){
             return Result.fail("用户邮箱不存在");

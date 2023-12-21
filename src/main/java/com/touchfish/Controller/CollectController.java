@@ -1,7 +1,12 @@
 package com.touchfish.Controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.CollectInfo;
+import com.touchfish.MiddleClass.LabelInfo;
+import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
+import com.touchfish.Service.impl.CollectCntImpl;
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
 import com.touchfish.Tool.Result;
@@ -10,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +27,8 @@ public class CollectController {
     private CollectImpl collectService;
     @Autowired
     private LabelImpl labelService;
+    @Autowired
+    private CollectCntImpl collectCntService;
 
     @PostMapping
     @Operation(summary = "收藏文章")
@@ -28,9 +36,16 @@ public class CollectController {
     public Result<String> saveCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
-        if (collectService.saveCollect(user_id, paper_id))
+        if (collectService.saveCollect(user_id, paper_id)) {
+            CollectCnt collectCnt = collectCntService.getById(paper_id);
+            if (collectCnt == null)
+                collectCntService.save(new CollectCnt(paper_id, 1));
+            else {
+                collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() + 1);
+                collectCntService.updateById(collectCnt);
+            }
             return Result.ok("收藏成功");
-        else
+        } else
             return Result.fail("已收藏");
     }
 
@@ -40,15 +55,17 @@ public class CollectController {
     public Result<String> deleteCollect(@RequestBody Map<String, String> map) {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
-        if (collectService.deleteCollect(user_id, paper_id))
+        if (collectService.deleteCollect(user_id, paper_id)) {
+            CollectCnt collectCnt = collectCntService.getById(paper_id);
+            collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() - 1);
+            collectCntService.updateById(collectCnt);
             return Result.ok("取消收藏成功");
-        else
+        } else
             return Result.fail("未收藏");
     }
 
     @GetMapping
     @Operation(summary = "获取收藏列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
     public Result<List<CollectInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
         return Result.ok("获取收藏列表成功", collects);
@@ -62,13 +79,7 @@ public class CollectController {
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
         if (collectService.addLabel(user_id, paper_id, label_name)) {
-            Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
-            if (label != null) {
-                label.setCount(label.getCount() + 1);
-                labelService.updateById(label);
-            } else {
-                labelService.save(new Label(label_name, 1));
-            }
+            labelService.addLabel(user_id, label_name);
             return Result.ok("添加标签成功");
         } else
             return Result.fail("已添加");
@@ -82,9 +93,7 @@ public class CollectController {
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
         if (collectService.deleteLabel(user_id, paper_id, label_name)) {
-            Label label = labelService.lambdaQuery().eq(Label::getName, label_name).one();
-            label.setCount(label.getCount() - 1);
-            labelService.updateById(label);
+            labelService.deleteLabel(user_id, label_name);
             return Result.ok("删除标签成功");
         } else
             return Result.fail("未添加");
@@ -92,8 +101,8 @@ public class CollectController {
 
     @GetMapping("/label")
     @Operation(summary = "获取标签列表")
-    public Result<List<Label>> getLabels() {
-        List<Label> labels = labelService.list();
-        return Result.ok("获取标签列表成功", labels);
+    public Result<Label> getLabels(Integer user_id) {
+        Label label = labelService.getById(user_id);
+        return Result.ok("获取标签列表成功", label);
     }
 }

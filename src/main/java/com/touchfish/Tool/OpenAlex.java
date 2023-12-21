@@ -7,6 +7,9 @@ import com.touchfish.Po.Author;
 import com.touchfish.Po.Institution;
 import com.touchfish.Po.InstitutionRelation;
 import com.touchfish.Po.Paper;
+import com.touchfish.Service.impl.PaperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OpenAlex {
+
 
     public static Object sendResponse(String table, String id) {
         try {
@@ -37,7 +41,6 @@ public class OpenAlex {
                 }
                 reader.close();
                 String jsonResponse = response.toString();
-                System.out.println(jsonResponse);
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(jsonResponse);
                 switch (table) {
@@ -53,8 +56,11 @@ public class OpenAlex {
                         }
                         author.setId(findId(author.getId()));
                         LastKnownInstitution lastKnownInstitution = author.getLast_known_institution();
-                        lastKnownInstitution.setId(findId(lastKnownInstitution.getId()));
-                        author.setLast_known_institution(lastKnownInstitution);
+                        if(lastKnownInstitution != null)
+                        {
+                            lastKnownInstitution.setId(findId(lastKnownInstitution.getId()));
+                            author.setLast_known_institution(lastKnownInstitution);
+                        }
                         author.setH_index(h_index);
                         author.setFields(authorFields);
                     }
@@ -68,14 +74,19 @@ public class OpenAlex {
                             instFields.add(field);
                         }
                         List<InstitutionRelation> associatedInstitutions = institution.getAssociated_institutions();
-                        for (InstitutionRelation associatedInstitution : associatedInstitutions) {
-                            associatedInstitution.setId(findId(associatedInstitution.getId()));
+                        if(associatedInstitutions != null)
+                        {
+                            for (InstitutionRelation associatedInstitution : associatedInstitutions) {
+                                associatedInstitution.setId(findId(associatedInstitution.getId()));
+                            }
+                            institution.setAssociated_institutions(associatedInstitutions);
                         }
-                        institution.setAssociated_institutions(associatedInstitutions);
                         institution.setId(findId(institution.getId()));
                         institution.setFields(instFields);
                     }
-                    case "paper" -> object = mapper.readValue(jsonResponse, Paper.class);
+                    case "work" -> {
+                        return jsonNode;
+                    }
                 }
             } else {
                 System.out.println("HTTP request failed with response code: " + responseCode);
@@ -99,15 +110,21 @@ public class OpenAlex {
         }
     }
 
+
+
+
+
+
+
     public static void main(String[] args) {
         String table, id;
 //        table = "author";
 //        id = "A5077915689";
 //        Author author = (Author) sendResponse(table, id);
 //        System.out.println(author);
-        table = "institution";
-        id = "I27837315";
-        Institution institution = (Institution) sendResponse(table, id);
-        System.out.println(institution);
+        table = "work";
+        id = "W100240748";
+        Paper paper = (Paper) sendResponse(table,id);
+        System.out.println(paper);
     }
 }
