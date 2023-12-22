@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 public class LabelImpl extends ServiceImpl<LabelMapper, Label> implements ILabel {
-    public void addLabel(Integer user_id, String label_name) {
+    public boolean addLabel(Integer user_id, String label_name, boolean flag) {
         Label label = getById(user_id);
         if(label==null)
         {
@@ -24,22 +24,32 @@ public class LabelImpl extends ServiceImpl<LabelMapper, Label> implements ILabel
         List<LabelInfo> labelList = label.getLabel_list();
         List<LabelInfo> list = new ObjectMapper().convertValue(labelList, new TypeReference<>() {
         });
-        boolean flag = false;
+        boolean find = false;
         for(LabelInfo labelInfo:list)
         {
             if(labelInfo.getName().equals(label_name))
             {
-                flag = true;
-                labelInfo.setCount(labelInfo.getCount()+1);
-                break;
+                if(flag) {
+                    find = true;
+                    labelInfo.setCount(labelInfo.getCount()+1);
+                    break;
+                }
+                else
+                    return false;
             }
         }
-        if (!flag) list.add(new LabelInfo(label_name, 1));
+        if (!find) {
+            if(flag)
+                list.add(new LabelInfo(label_name, 1));
+            else
+                list.add(new LabelInfo(label_name, 0));
+        }
         label.setLabel_list(list);
         updateById(label);
+        return true;
     }
 
-    public void deleteLabel(Integer user_id, String label_name) {
+    public void deleteLabel(Integer user_id, String label_name, boolean flag) {
         Label label = getById(user_id);
         List<LabelInfo> labelList = label.getLabel_list();
         List<LabelInfo> list = new ObjectMapper().convertValue(labelList, new TypeReference<>() {
@@ -48,7 +58,8 @@ public class LabelImpl extends ServiceImpl<LabelMapper, Label> implements ILabel
         {
             if(labelInfo.getName().equals(label_name))
             {
-                labelInfo.setCount(labelInfo.getCount()-1);
+                if(flag) labelInfo.setCount(labelInfo.getCount()-1);
+                else labelInfo.setCount(0);
                 break;
             }
         }

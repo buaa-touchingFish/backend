@@ -42,7 +42,6 @@ public class CommentController {
 
     @GetMapping
     @Operation(summary = "获取评论列表")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"paper_id\":\"文章id\"")
     public Result<List<Comment>> getCommentByPaper(String paper_id) {
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
         return Result.ok("获取评论列表成功", list);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
+import com.touchfish.Po.Collect;
 import com.touchfish.ReturnClass.ReturnCollectPaperInfo;
 import com.touchfish.Po.Label;
 import com.touchfish.Po.Paper;
@@ -91,15 +92,14 @@ public class CollectController {
         List<ReturnCollectPaperInfo> returnCollectPaperInfos = new ArrayList<>();
         collects = new ObjectMapper().convertValue(collects, new TypeReference<>() {
         });
-        for(CollectInfo collectInfo:collects)
-        {
+        for (CollectInfo collectInfo : collects) {
             String paperId = collectInfo.getPaper_id();
             Paper paper = paperService.getById(paperId);
             List<String> authors = new ArrayList<>();
             List<AuthorShip> authorships = paper.getAuthorships();
             authorships = new ObjectMapper().convertValue(authorships, new TypeReference<>() {
             });
-            for(AuthorShip authorShip: authorships)
+            for (AuthorShip authorShip : authorships)
                 authors.add(authorShip.getAuthor().getDisplay_name());
             ReturnCollectPaperInfo returnCollectPaperInfo = new ReturnCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, paper.getPublisher().getDisplay_name(), paper.getCited_by_count(), collectInfo.getLabels());
             returnCollectPaperInfos.add(returnCollectPaperInfo);
@@ -115,11 +115,22 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
-        if (collectService.addLabel(user_id, paper_id, label_name)) {
-            labelService.addLabel(user_id, label_name);
-            return Result.ok("添加标签成功");
-        } else
-            return Result.fail("已添加");
+        if (paper_id != null)
+        {
+            if (collectService.addLabel(user_id, paper_id, label_name))
+            {
+                labelService.addLabel(user_id, label_name, true);
+                return Result.ok("添加标签成功");
+            } else
+                return Result.fail("已添加");
+        }
+        else
+        {
+            if(labelService.addLabel(user_id, label_name, false))
+                return Result.ok("添加标签成功");
+            else
+                return Result.fail("已添加");
+        }
     }
 
     @DeleteMapping("/label")
@@ -130,11 +141,23 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
-        if (collectService.deleteLabel(user_id, paper_id, label_name)) {
-            labelService.deleteLabel(user_id, label_name);
+        if(paper_id !=null) {
+            collectService.deleteLabel(user_id, paper_id, label_name);
+            labelService.deleteLabel(user_id, label_name, true);
             return Result.ok("删除标签成功");
-        } else
-            return Result.fail("未添加");
+        }
+        else {
+            Collect collect = collectService.getById(user_id);
+            List<CollectInfo> collectInfos = collect.getCollectInfos();
+            collectInfos = new ObjectMapper().convertValue(collectInfos, new TypeReference<>() {
+            });
+            for (CollectInfo collectInfo:collectInfos)
+                collectInfo.getLabels().remove(label_name);
+            collect.setCollectInfos(collectInfos);
+            collectService.updateById(collect);
+            labelService.deleteLabel(user_id, label_name, false);
+            return Result.ok("删除标签成功");
+        }
     }
 
     @GetMapping("/label")
