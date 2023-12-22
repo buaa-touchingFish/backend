@@ -55,6 +55,7 @@ public class UserController {
     private QiNiuOssUtil qiNiuOssUtil;
 
 
+
     private static String getTimeNow(){
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -107,8 +108,20 @@ public class UserController {
         String jsonstr = JSONUtil.toJsonStr(myUser);
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
 
+        stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
+
         return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid()));
     }
+
+    @PostMapping("/outlogin")
+    @LoginCheck
+    @Operation(summary = "退出登录",security = { @SecurityRequirement(name = "bearer-key") })
+    public Result<String> outLogin(){
+        User myUser = UserContext.getUser();
+        stringRedisTemplate.delete(RedisKey.JWT_KEY+myUser.getUsername());
+        return Result.ok("退出登录");
+    }
+
 
     @PostMapping("/findpwd")
     @Operation(summary = "修改/找回密码时发送验证码")
@@ -233,6 +246,8 @@ public class UserController {
         if (update) return Result.ok("修改信息成功");
         else return Result.fail("修改信息失败");
     }
+
+
 
 }
 

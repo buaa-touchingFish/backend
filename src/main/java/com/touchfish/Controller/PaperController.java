@@ -23,6 +23,7 @@ import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 
+import com.touchfish.Tool.ZsetRedis;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -51,9 +52,6 @@ import java.util.concurrent.TimeUnit;
 @Tag(name = "论文相关接口")
 public class PaperController {
     Integer pageSize=100;
-
-    @Autowired
-    private PaperImpl paper;
     @Autowired
     private ElasticSearchRepository es;
     @Autowired
@@ -67,6 +65,9 @@ public class PaperController {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private ZsetRedis zsetRedis;
     /*@GetMapping("/id")
     public Result<PaperDoc>getWork(){
         System.out.println(es.findById("W2029916517"));
@@ -78,16 +79,18 @@ public class PaperController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
         ThreadUtil.execute(()->{
-            String sumLook = stringRedisTemplate.opsForValue().get(RedisKey.SUM_LOOK_KEY);
-            Integer sum = 1;
-            if (sumLook != null){
-                sum = Integer.parseInt(sumLook)+1;
-            }
-            stringRedisTemplate.opsForValue().set(RedisKey.SUM_LOOK_KEY,sum.toString());
+            stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
+            zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
+            zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+
         });
+        Integer browse = zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY, json.get("id"), 1.0);
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
         if (id1 != null){
             PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
+            paperInfo.setBrowse(browse);
+            paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
+            paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
             return Result.ok("成功返回",paperInfo);
         }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
@@ -112,6 +115,9 @@ public class PaperController {
         paperInfo.setId(paper.getId());
         paperInfo.setRefWorks(paper.getReferenced_works());
         paperInfo.setRelWorks(paper.getRelated_works());
+        paperInfo.setBrowse(browse);
+        paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
+        paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
 
         ThreadUtil.execute(()->{
             for (String id:referenced_works){
@@ -293,4 +299,25 @@ public class PaperController {
         Integer sumLook = Integer.parseInt(stringRedisTemplate.opsForValue().get(RedisKey.SUM_LOOK_KEY));
         return Result.ok("成功返回",sumLook);
     }
+
+    @PostMapping("/good")
+    @Operation(summary = "点赞")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<Integer> addGood(@RequestBody Map<String,String> mp){
+        Integer ans = zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY,mp.get("id"),1.0);
+        zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),mp.get("id"),1.0);
+        zsetRedis.setTTL(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+        return Result.ok("点赞成功",ans);
+    }
+
+    @PostMapping("/nogood")
+    @Operation(summary = "取消点赞")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<Integer> addNoGood(@RequestBody Map<String,String> mp){
+        Integer ans = zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY,mp.get("id"),-1.0);
+        zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),mp.get("id"),-1.0);
+        zsetRedis.setTTL(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+        return Result.ok("取消点赞",ans);
+    }
+
 }
