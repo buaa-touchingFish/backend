@@ -25,6 +25,7 @@ public class PaperInfo {
     private Integer browse ; //浏览量
     private Integer good ; //点赞量
     private Integer collect ; //收藏量
+    private boolean isCollected = false;//是否被收藏
     private List<String> keywords; // 关键词
     private List<AuthorShip> authorships;//作者相关信息
     private List<String> referenced_works = new ArrayList<>();//相关文献

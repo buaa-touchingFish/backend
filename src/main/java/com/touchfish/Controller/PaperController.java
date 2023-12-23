@@ -12,19 +12,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
+import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
-import com.touchfish.Po.AuthorPaper;
-import com.touchfish.Po.Comment;
-import com.touchfish.Po.Paper;
-import com.touchfish.Po.PaperAppeal;
-import com.touchfish.Po.PaperDoc;
-import com.touchfish.Service.impl.PaperAppealImpl;
-import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Po.*;
+import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.*;
-import com.touchfish.Service.impl.AuthorPaperImpl;
 import com.touchfish.Po.PaperDoc;
-import com.touchfish.Service.impl.CommentImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
@@ -81,6 +75,9 @@ public class PaperController {
 
     @Autowired
     private ZsetRedis zsetRedis;
+
+    @Autowired
+    private CollectImpl collectImpl;
     /*@GetMapping("/id")
     public Result<PaperDoc>getWork(){
         System.out.println(es.findById("W2029916517"));
@@ -94,9 +91,12 @@ public class PaperController {
     }
 
     @PostMapping ("/single")
-    @Operation(summary = "点击获取单个文献")
+    @LoginCheck
+    @Operation(summary = "点击获取单个文献",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
+        User myUser = UserContext.getUser();
+        ObjectMapper mapper = new ObjectMapper();
         ThreadUtil.execute(()->{
             stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
             zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
@@ -110,14 +110,27 @@ public class PaperController {
             paperInfo.setBrowse(browse);
             paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
             paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
+            Collect byId = collectImpl.getById(myUser.getUid());
+            if (byId != null){
+                List<CollectInfo> collectInfos = byId.getCollectInfos();
+                List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
+                for (CollectInfo collectInfo:collectInfoList){
+                    if (collectInfo.getPaper_id().equals(json.get("id"))){
+                        paperInfo.setCollected(true);
+                        break;
+                    }
+                }
+            }
             return Result.ok("成功返回",paperInfo);
         }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
-        ObjectMapper mapper = new ObjectMapper();
         List<AuthorShip> authorships = paper.getAuthorships();
         List<AuthorShip> authorShipList = mapper.convertValue(authorships, new TypeReference<>() {});
         List<String> referenced_works = paper.getReferenced_works();
         List<String> related_works = paper.getRelated_works();
+
+        Collect byId = collectImpl.getById(myUser.getUid());
+
 
         PaperInfo paperInfo = new PaperInfo();
         paperInfo.setAbstract(paper.getAbstract());
@@ -137,7 +150,16 @@ public class PaperController {
         paperInfo.setBrowse(browse);
         paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
         paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
-
+        if (byId != null){
+            List<CollectInfo> collectInfos = byId.getCollectInfos();
+            List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
+            for (CollectInfo collectInfo:collectInfoList){
+                if (collectInfo.getPaper_id().equals(json.get("id"))){
+                    paperInfo.setCollected(true);
+                    break;
+                }
+            }
+        }
         ThreadUtil.execute(()->{
             for (String id:referenced_works){
                 Paper one = paperImpl.getPaperByAlex(id);
@@ -306,23 +328,6 @@ public class PaperController {
         return Result.ok("成功返回",ans);
     }
 
-    @PostMapping("/create/appeal")
-    @LoginCheck
-    @Operation(summary = "申诉下架论文", security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"content\":\"string\"\n\"" +
-            "paper_id\":\"string\"")
-    public Result<String> createAppeal(@RequestBody Map<String, String> map) {
-        String content = map.get("content");
-        String paper_id = map.get("paper_id");
-
-        if (content == null || paper_id == null) {
-            return Result.fail("content或paper_id参数未找到");
-        }
-
-        paperAppeal.save(new PaperAppeal(UserContext.getUser().getUid(), getTimeNow(), paper_id, content));
-
-        return Result.ok("创建申诉成功");
-    }
 
     @GetMapping()
     @Operation(summary = "获取文献总数")
@@ -364,7 +369,7 @@ public class PaperController {
         Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet().reverseRangeWithScores(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(), 0, 9);
         for (var a:typedTuples){
             Paper one = paperImpl.lambdaQuery().eq(Paper::getId, a.getValue()).one();
-            ans.add(new HotPaper(a.getValue(),one.getTitle()));
+            ans.add(new HotPaper(a.getValue(),one.getTitle(),zsetRedis.getScore(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(),one.getId())));
         }
         return Result.ok("成功获取",ans);
     }
