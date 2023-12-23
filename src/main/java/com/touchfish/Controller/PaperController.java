@@ -328,7 +328,6 @@ public class PaperController {
         return Result.ok("成功返回",ans);
     }
 
-
     @GetMapping()
     @Operation(summary = "获取文献总数")
     public Result<Integer> getCount(){

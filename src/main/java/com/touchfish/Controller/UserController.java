@@ -10,6 +10,12 @@ import com.qiniu.util.Auth;
 import com.touchfish.Dao.AuthorMapper;
 import com.touchfish.Dto.*;
 import com.touchfish.Po.Author;
+import com.touchfish.Po.Paper;
+import com.touchfish.Po.PaperAppeal;
+import com.touchfish.Po.User;
+import com.touchfish.Service.impl.AuthorImpl;
+import com.touchfish.Service.impl.PaperAppealImpl;
+import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Po.ClaimRequest;
 import com.touchfish.Po.User;
 import com.touchfish.Service.impl.AuthorImpl;
@@ -46,6 +52,10 @@ public class UserController {
     private  Captcha captcha ;
     @Autowired
     private UserImpl user;
+    @Autowired
+    private PaperAppealImpl paperAppeal;
+    @Autowired
+    private PaperImpl paper;
 
     @Autowired
     private AuthorImpl authorImpl;
@@ -53,8 +63,6 @@ public class UserController {
     private ClaimRequestImpl claimRequestImpl;
     @Autowired
     private QiNiuOssUtil qiNiuOssUtil;
-
-
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -251,7 +259,32 @@ public class UserController {
         else return Result.fail("修改信息失败");
     }
 
+    @PostMapping("/create/appeal")
+    @LoginCheck
+    @Operation(summary = "申诉文章",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "申诉理由 申诉的文章id")
+    public Result<String> createAppeal(@RequestBody AppealInfo appealInfo){
+        Paper targetPaper = paper.getBaseMapper().selectById(appealInfo.getPaper_id());
+        if(!targetPaper.getIs_active()){
+            return Result.fail("该文章已经申诉下架", 402);
+        }
 
+        PaperAppeal existAppeal = paperAppeal.lambdaQuery().ne(PaperAppeal::getStatus, -1)
+                        .eq(PaperAppeal::getPaper_id, appealInfo.getPaper_id())
+                        .eq(PaperAppeal::getApplicant_id, UserContext.getUser().getUid()).one();
+
+        if(existAppeal != null){
+            if(existAppeal.getStatus() == 0)
+                return Result.fail("之前提交的申诉尚未处理", 401);
+            else
+                return Result.fail("您之前的申诉已经通过，但文章被恢复", 403);
+        }
+
+        paperAppeal.save(new PaperAppeal(UserContext.getUser().getUid(), getTimeNow(),
+                appealInfo.getPaper_id(), appealInfo.getContent()));
+
+        return Result.ok("创建申诉成功");
+    }
 
 }
 
