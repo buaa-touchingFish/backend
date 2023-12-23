@@ -172,6 +172,8 @@ public class AdminController {
                     false));
         }
 
+        paperAppeal.updateById(targetAppeal);
+
         return Result.ok("处理申诉成功");
     }
 
