@@ -10,6 +10,7 @@ import com.touchfish.Service.impl.InstitutionAuthorImpl;
 import com.touchfish.Service.impl.InstitutionImpl;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/institution")
+@Tag(name = "机构相关接口")
 public class InstitutionController {
     @Autowired
     private InstitutionImpl institution;

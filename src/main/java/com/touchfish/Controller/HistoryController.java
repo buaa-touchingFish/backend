@@ -5,15 +5,24 @@ import com.touchfish.Po.History;
 import com.touchfish.Service.impl.HistoryImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.LoginCheck;
+import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +35,7 @@ public class HistoryController {
     private HistoryImpl history;
 
     @Autowired
-    private PaperImpl paper;
+    private StringRedisTemplate stringRedisTemplate;
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -83,5 +92,22 @@ public class HistoryController {
     }
 
 
+    @PostMapping("/logincnt")
+    @Operation(summary = "获取前n天每日登录数")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"days\":n")
+    public Result<List<Integer>> getPreLoginCnt(@RequestBody Map<String,String> mp){
+        Integer n = Integer.parseInt(mp.get("days"));
+        List<Integer> ans  = new ArrayList<>();
+        LocalDate currentDate = LocalDate.now();
+
+        for (int i=0;i<n;i++){
+            LocalDate previousDay = currentDate.minusDays(i);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String formattedDate = previousDay.format(formatter);
+            Integer cnt = Integer.parseInt(stringRedisTemplate.opsForValue().get(RedisKey.LOGIN_KEY+formattedDate) == null?"0":stringRedisTemplate.opsForValue().get(RedisKey.LOGIN_KEY+formattedDate));
+            ans.add(cnt);
+        }
+        return Result.ok("返回成功",ans);
+    }
 
 }

@@ -4,28 +4,38 @@ package com.touchfish.Controller;
 import cn.hutool.core.convert.Convert;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.touchfish.Dao.ElasticSearchRepository;
+import com.touchfish.Dto.HotPaper;
 import com.touchfish.Dto.SearchInfo;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
+import com.touchfish.Po.AuthorPaper;
+import com.touchfish.Po.Comment;
 import com.touchfish.Po.Paper;
 import com.touchfish.Po.PaperAppeal;
 import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.impl.PaperAppealImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.*;
+import com.touchfish.Service.impl.AuthorPaperImpl;
+import com.touchfish.Po.PaperDoc;
+import com.touchfish.Service.impl.CommentImpl;
+import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Tool.RedisKey;
+import com.touchfish.Tool.Result;
 
+import com.touchfish.Tool.ZsetRedis;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
@@ -35,9 +45,11 @@ import org.springframework.data.elasticsearch.core.query.BaseQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
+import java.awt.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -45,15 +57,13 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/paper")
 @Tag(name = "论文相关接口")
 public class PaperController {
     Integer pageSize=100;
-
-    @Autowired
-    private PaperImpl paper;
     @Autowired
     private ElasticSearchRepository es;
     @Autowired
@@ -64,7 +74,13 @@ public class PaperController {
     private PaperAppealImpl paperAppeal;
 
     @Autowired
+    private AuthorPaperImpl authorPaperImpl;
+
+    @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private ZsetRedis zsetRedis;
     /*@GetMapping("/id")
     public Result<PaperDoc>getWork(){
         System.out.println(es.findById("W2029916517"));
@@ -81,9 +97,19 @@ public class PaperController {
     @Operation(summary = "点击获取单个文献")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
+        ThreadUtil.execute(()->{
+            stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
+            zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
+            zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+
+        });
+        Integer browse = zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY, json.get("id"), 1.0);
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
         if (id1 != null){
             PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
+            paperInfo.setBrowse(browse);
+            paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
+            paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
             return Result.ok("成功返回",paperInfo);
         }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
@@ -103,16 +129,29 @@ public class PaperController {
         paperInfo.setCited_by_count(paper.getCited_by_count());
         paperInfo.setPublication_date(paper.getPublication_date());
         paperInfo.setPublisher(paperInfo.getPublisher());
-        paperInfo.setAuthors(paper.getAuthorships());
+        paperInfo.setAuthorships(paper.getAuthorships());
         paperInfo.setType(paper.getType());
         paperInfo.setId(paper.getId());
-        paperInfo.setRefWorks(paper.getReferenced_works());
-        paperInfo.setRelWorks(paper.getRelated_works());
+        paperInfo.setReferenced_works(paper.getReferenced_works());
+        paperInfo.setRelated_works(paper.getRelated_works());
+        paperInfo.setBrowse(browse);
+        paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
+        paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
 
         ThreadUtil.execute(()->{
             for (String id:referenced_works){
                 Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
+                List<AuthorShip> authorShipList1 = one.getAuthorships();
+                for (AuthorShip authorShip:authorShipList1){
+                    if (authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId,authorShip.getAuthor().id).exists()){
+                        AuthorPaper one1 = authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId, authorShip.getAuthor().id).one();
+                        if (!one1.getPapers().contains(one.getId())){
+                            one1.getPapers().add(one.getId());
+                        }
+                        authorPaperImpl.updateById(one1);
+                    }
+                }
             }
         });
 
@@ -120,10 +159,20 @@ public class PaperController {
             for (String id:related_works){
                 Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
+                List<AuthorShip> authorShipList1 = one.getAuthorships();
+                for (AuthorShip authorShip:authorShipList1){
+                    if (authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId,authorShip.getAuthor().id).exists()){
+                        AuthorPaper one1 = authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId, authorShip.getAuthor().id).one();
+                        if (!one1.getPapers().contains(one.getId())){
+                            one1.getPapers().add(one.getId());
+                        }
+                        authorPaperImpl.updateById(one1);
+                    }
+                }
             }
         });
         String s = JSONUtil.toJsonStr(paperInfo);
-        stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s);
+        stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s,1, TimeUnit.DAYS);
         return Result.ok("成功返回",paperInfo);
     }
     @PostMapping ("/search")
@@ -273,5 +322,48 @@ public class PaperController {
         paperAppeal.save(new PaperAppeal(UserContext.getUser().getUid(), getTimeNow(), paper_id, content));
 
         return Result.ok("创建申诉成功");
+    @GetMapping()
+    @Operation(summary = "获取文献总数")
+    public Result<Integer> getCount(){
+        return Result.ok("成功返回",7541000);
+    }
+
+    @GetMapping("/sumlook")
+    @Operation(summary = "获取文献总浏览数")
+    public Result<Integer> getSumLook(){
+        Integer sumLook = Integer.parseInt(stringRedisTemplate.opsForValue().get(RedisKey.SUM_LOOK_KEY));
+        return Result.ok("成功返回",sumLook);
+    }
+
+    @PostMapping("/good")
+    @Operation(summary = "点赞")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<Integer> addGood(@RequestBody Map<String,String> mp){
+        Integer ans = zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY,mp.get("id"),1.0);
+        zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),mp.get("id"),1.0);
+        zsetRedis.setTTL(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+        return Result.ok("点赞成功",ans);
+    }
+
+    @PostMapping("/nogood")
+    @Operation(summary = "取消点赞")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<Integer> addNoGood(@RequestBody Map<String,String> mp){
+        Integer ans = zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY,mp.get("id"),-1.0);
+        zsetRedis.incrementScore(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),mp.get("id"),-1.0);
+        zsetRedis.setTTL(RedisKey.GOOD_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+        return Result.ok("取消点赞",ans);
+    }
+
+    @GetMapping("/hot")
+    @Operation(summary = "获取热门文献")
+    public Result<List<HotPaper>> getHot(){
+        List<HotPaper> ans = new ArrayList<>();
+        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet().reverseRangeWithScores(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(), 0, 9);
+        for (var a:typedTuples){
+            Paper one = paperImpl.lambdaQuery().eq(Paper::getId, a.getValue()).one();
+            ans.add(new HotPaper(a.getValue(),one.getTitle()));
+        }
+        return Result.ok("成功获取",ans);
     }
 }
