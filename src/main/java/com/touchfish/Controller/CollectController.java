@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.Po.Collect;
-import com.touchfish.ReturnClass.ReturnCollectPaperInfo;
+import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
 import com.touchfish.Po.Paper;
+import com.touchfish.ReturnClass.RetCollectPaperInfo;
+import com.touchfish.Service.impl.CollectCntImpl;
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
 import com.touchfish.Service.impl.PaperImpl;
@@ -75,9 +77,9 @@ public class CollectController {
     @GetMapping
     @LoginCheck
     @Operation(summary = "获取收藏列表", security = {@SecurityRequirement(name = "bearer-key")})
-    public Result<List<ReturnCollectPaperInfo>> getCollectByUser(Integer user_id) {
+    public Result<List<RetCollectPaperInfo>> getCollectByUser(Integer user_id) {
         List<CollectInfo> collects = collectService.getCollects(user_id);
-        List<ReturnCollectPaperInfo> returnCollectPaperInfos = new ArrayList<>();
+        List<RetCollectPaperInfo> retCollectPaperInfos = new ArrayList<>();
         collects = new ObjectMapper().convertValue(collects, new TypeReference<>() {
         });
         for (CollectInfo collectInfo : collects) {
@@ -89,10 +91,10 @@ public class CollectController {
             });
             for (AuthorShip authorShip : authorships)
                 authors.add(authorShip.getAuthor().getDisplay_name());
-            ReturnCollectPaperInfo returnCollectPaperInfo = new ReturnCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, paper.getPublisher().getDisplay_name(), paper.getCited_by_count(), collectInfo.getLabels());
-            returnCollectPaperInfos.add(returnCollectPaperInfo);
+            RetCollectPaperInfo retCollectPaperInfo = new RetCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, paper.getPublisher().getDisplay_name(), paper.getCited_by_count(), collectInfo.getLabels());
+            retCollectPaperInfos.add(retCollectPaperInfo);
         }
-        return Result.ok("获取收藏列表成功", returnCollectPaperInfos);
+        return Result.ok("获取收藏列表成功", retCollectPaperInfos);
     }
 
     @PostMapping("/label")
