@@ -61,6 +61,10 @@ public class Paper {
         if(paperDoc.getKeywords()!=null)
             keywords= Arrays.asList(paperDoc.getKeywords().substring(1,paperDoc.getKeywords().length()-1).split(","));
         Abstract=paperDoc.getAbstracts()==null?"Unknown":paperDoc.getAbstracts();
+        if(paperDoc.getAbstracts()!=null){
+            if(paperDoc.getAbstracts().equals(""))
+                Abstract="Unknown";
+        }
         cited_by_count=paperDoc.getCited_by_count();
         publication_date=paperDoc.getPublication_date();
         type=paperDoc.getType();
