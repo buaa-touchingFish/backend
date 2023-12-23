@@ -422,7 +422,7 @@ public class PaperController {
                                 .from(pageNum).
                                 query(query)
                         , PaperDoc.class);*/
-            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).query(query),PaperDoc.class);
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
             for(Hit<PaperDoc>hit:response.hits().hits()){
                 papers.add(new Paper(hit.source()));
