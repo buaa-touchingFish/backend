@@ -1,7 +1,9 @@
 package com.touchfish.Controller;
 
 import com.touchfish.Po.Comment;
+import com.touchfish.ReturnClass.RetComment;
 import com.touchfish.Service.impl.CommentImpl;
+import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +23,8 @@ import java.util.Map;
 public class CommentController {
     @Autowired
     private CommentImpl commentService;
+    @Autowired
+    private UserImpl userService;
 
     @PostMapping
     @LoginCheck
@@ -30,11 +35,10 @@ public class CommentController {
         String paper_id = map.get("paper_id");
         Integer sender_id = Integer.parseInt(map.get("sender_id"));
         LocalDateTime send_time = LocalDateTime.now();
-        if(map.get("receiver_id")!=null) {
+        if (map.get("receiver_id") != null) {
             Integer receiver_id = Integer.parseInt(map.get("receiver_id"));
             commentService.save(new Comment(content, paper_id, sender_id, send_time, receiver_id));
-        }
-        else {
+        } else {
             commentService.save(new Comment(content, paper_id, sender_id, send_time));
         }
         return Result.ok("评论成功");
@@ -42,8 +46,14 @@ public class CommentController {
 
     @GetMapping
     @Operation(summary = "获取评论列表")
-    public Result<List<Comment>> getCommentByPaper(String paper_id) {
+    public Result<List<RetComment>> getCommentByPaper(String paper_id) {
+        List<RetComment> retComments = new ArrayList<>();
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
-        return Result.ok("获取评论列表成功", list);
+        for(Comment comment:list)
+        {
+            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id());
+            retComments.add(retComment);
+        }
+        return Result.ok("获取评论列表成功", retComments);
     }
 }

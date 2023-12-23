@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReturnCollectPaperInfo {
+public class RetCollectPaperInfo {
     private String paper_id;
     private String title;
     private List<String> authors;
