@@ -122,4 +122,9 @@ public class AuthorController {
         return author;
     }
 
+    @GetMapping("/count")
+    @Operation(summary = "获取学者总数")
+    public Result<Integer> getCount(){
+        return Result.ok("成功返回",2325000);
+    }
 }

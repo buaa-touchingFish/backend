@@ -1,6 +1,5 @@
 package com.touchfish.Controller;
 
-import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.SubscribeCnt;
 import com.touchfish.Service.impl.SubscribeCntImpl;
 import com.touchfish.Service.impl.SubscribeImpl;
@@ -9,7 +8,6 @@ import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

@@ -8,11 +8,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@TableName(value = "collect_cnt")
+@TableName(value = "hot_point")
 @NoArgsConstructor
 @AllArgsConstructor
-public class CollectCnt {
+public class HotPoint {
     @TableId(type = IdType.INPUT)
     private String paper_id;
-    private Integer collect_cnt;
+    private Integer collect_cnt = 0;
+    private Integer good_cnt = 0;
+    private Integer browse_cnt = 0;
 }

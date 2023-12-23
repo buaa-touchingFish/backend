@@ -21,11 +21,11 @@ public class ClaimRequest {
     String photo_url;
 
 
-    public ClaimRequest(int applicant_id, String create_time, String author_id) {
+    public ClaimRequest(int applicant_id, String create_time, String author_id,String photo_url) {
         this.applicant_id = applicant_id;
         this.create_time = create_time;
         this.author_id = author_id;
-
+        this.photo_url = photo_url;
         this.status = 0;
     }
 

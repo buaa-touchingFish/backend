@@ -16,6 +16,10 @@ import com.touchfish.Po.User;
 import com.touchfish.Service.impl.AuthorImpl;
 import com.touchfish.Service.impl.PaperAppealImpl;
 import com.touchfish.Service.impl.PaperImpl;
+import com.touchfish.Po.ClaimRequest;
+import com.touchfish.Po.User;
+import com.touchfish.Service.impl.AuthorImpl;
+import com.touchfish.Service.impl.ClaimRequestImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.*;
 import io.lettuce.core.ScriptOutputType;
@@ -53,7 +57,10 @@ public class UserController {
     @Autowired
     private PaperImpl paper;
 
-
+    @Autowired
+    private AuthorImpl authorImpl;
+    @Autowired
+    private ClaimRequestImpl claimRequestImpl;
     @Autowired
     private QiNiuOssUtil qiNiuOssUtil;
 
@@ -96,7 +103,7 @@ public class UserController {
     @PostMapping("/login")
     @Operation(summary = "登录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户名 密码")
-    public Result<String> login(@RequestBody LoginInfo loginInfo){
+    public Result<RegisterSuccess> login(@RequestBody LoginInfo loginInfo){
         if (!user.lambdaQuery().eq(User::getUsername,loginInfo.getUsername()).exists()){
             return Result.fail("用户名不存在");
         }
@@ -108,8 +115,21 @@ public class UserController {
         String jwtToken = JWT.generateJwtToken(name);
         String jsonstr = JSONUtil.toJsonStr(myUser);
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
-        return Result.ok("登录成功",jwtToken);
+
+        stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
+
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid()));
     }
+
+    @PostMapping("/outlogin")
+    @LoginCheck
+    @Operation(summary = "退出登录",security = { @SecurityRequirement(name = "bearer-key") })
+    public Result<String> outLogin(){
+        User myUser = UserContext.getUser();
+        stringRedisTemplate.delete(RedisKey.JWT_KEY+myUser.getUsername());
+        return Result.ok("退出登录");
+    }
+
 
     @PostMapping("/findpwd")
     @Operation(summary = "修改/找回密码时发送验证码")
@@ -142,13 +162,13 @@ public class UserController {
         else return Result.fail("修改密码失败");
     }
 
-    @PostMapping("/clainpage1")
+    @PostMapping("/claimcaptcha1")
     @LoginCheck
     @Operation(summary = "认领学者门户发送邮箱",security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱")
-    public Result<String>  claimHomePage1(@RequestBody ClaimInfo claimInfo){
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱 \"email\":")
+    public Result<String>  claimHomeCaptcha1(@RequestBody Map<String,String> mp){
         User now_user = UserContext.getUser();
-        String email =  claimInfo.getEmail();
+        String email =  mp.get("email");
         email = email.replace("\"","");
         boolean isEmail = Validator.isEmail(email);
         if (!isEmail|| !captcha.isValidClaim(email)) return  Result.fail("验证码格式错误");
@@ -160,26 +180,43 @@ public class UserController {
         }
     }
 
-    @PostMapping("/clainpage2")
+    @PostMapping("/claimcaptcha2")
     @LoginCheck
-    @Operation(summary = "认领学者门户确认邮箱",security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码")
-    public Result<String>  claimHomePage2(@RequestBody ClaimInfo claimInfo){
+    @Operation(summary = "认领学者门户确认邮箱并发送身份证照片",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码  照片")
+    public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha) throws IOException {
         User now_user = UserContext.getUser();
-        String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+claimInfo.getEmail());
+        if (user.lambdaQuery().eq(User::getUid,now_user.getUid()).one().getAuthor_id() != null){
+            return Result.fail("你已认领过门户");
+        }
+        Author one = authorImpl.lambdaQuery().eq(Author::getId, id).one();
+        if (one.getClaim_uid() != null){
+            return Result.fail("该学者门户已被认领");
+        }
+        String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+email);
         if (StrUtil.isEmpty(captcha)){
             return Result.fail("验证码已失效");
         }
-        if (!captcha.equals(claimInfo.getCaptcha())){
+        if (!captcha.equals(mycaptcha)){
             return Result.fail("验证码错误");
         }
-        boolean flag = user.lambdaUpdate().eq(User::getUsername, now_user.getUsername()).set(User::getAuthor_id, claimInfo.getAuthor_id()).update();
-        if (!flag){
-            return  Result.fail("数据库出错,更新数据失败");
+        String fileName = file.getOriginalFilename();
+        InputStream inputStream = file.getInputStream();
+        String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
+        ClaimRequest claimRequest = new ClaimRequest(now_user.getUid(),getTimeNow(),id,upload);
+        boolean save = true;
+        if (!claimRequestImpl.lambdaQuery().eq(ClaimRequest::getAuthor_id,id).eq(ClaimRequest::getApplicant_id,now_user.getUid()).exists()){
+            save = claimRequestImpl.save(claimRequest);
         }
+       
         //作者表要更新
-        return Result.ok("门户认领成功");
+        if (save){
+            return Result.ok("等待管理员审核");
+        }else{
+            return Result.fail("网络错误，请稍后再试");
+        }
     }
+
 
     @PostMapping("/upload")
     @LoginCheck

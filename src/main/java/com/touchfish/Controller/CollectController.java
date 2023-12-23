@@ -5,16 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.Po.Collect;
-import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
 import com.touchfish.Po.Paper;
 import com.touchfish.ReturnClass.RetCollectPaperInfo;
-import com.touchfish.Service.impl.CollectCntImpl;
+
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.LoginCheck;
+import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.ZsetRedis;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/collect")
@@ -34,9 +36,10 @@ public class CollectController {
     @Autowired
     private LabelImpl labelService;
     @Autowired
-    private CollectCntImpl collectCntService;
-    @Autowired
     private PaperImpl paperService;
+
+    @Autowired
+    private ZsetRedis zsetRedis;
 
     @PostMapping
     @LoginCheck
@@ -46,13 +49,9 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.saveCollect(user_id, paper_id)) {
-            CollectCnt collectCnt = collectCntService.getById(paper_id);
-            if (collectCnt == null)
-                collectCntService.save(new CollectCnt(paper_id, 1));
-            else {
-                collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() + 1);
-                collectCntService.updateById(collectCnt);
-            }
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,1.0);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,1.0);
+            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
             return Result.ok("收藏成功");
         } else
             return Result.fail("已收藏");
@@ -66,9 +65,9 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.deleteCollect(user_id, paper_id)) {
-            CollectCnt collectCnt = collectCntService.getById(paper_id);
-            collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() - 1);
-            collectCntService.updateById(collectCnt);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,-1.0);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,-1.0);
+            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
             return Result.ok("取消收藏成功");
         } else
             return Result.fail("未收藏");
