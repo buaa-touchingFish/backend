@@ -20,6 +20,4 @@ public interface ElasticSearchRepository extends ElasticsearchRepository<PaperDo
     Page<PaperDoc> findByInformation(String keyword, Pageable pageable);
     Page<PaperDoc> findByAuthorships(String author,Pageable pageable);
     Page<PaperDoc> findByPublishers(String publisher,Pageable pageable);
-    @Query("{\"match\": {\"name\": {\"query\": \"?0\"}}}")
-    Page<PaperDoc> find(String name,Pageable pageable);
 }

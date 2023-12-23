@@ -12,8 +12,6 @@ import com.touchfish.MiddleClass.DisplayInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,8 +58,9 @@ public class Paper {
         authorships=new ArrayList<>();
         while (matcher.find())
             authorships.add(JSONUtil.toBean(matcher.group(),AuthorShip.class));
-        keywords= Arrays.asList(paperDoc.getKeywords().substring(1,paperDoc.getKeywords().length()-1).split(","));
-        Abstract=paperDoc.getAbstracts().equals("")?"Unknown":paperDoc.getAbstracts();
+        if(paperDoc.getKeywords()!=null)
+            keywords= Arrays.asList(paperDoc.getKeywords().substring(1,paperDoc.getKeywords().length()-1).split(","));
+        Abstract=paperDoc.getAbstracts()==null?"Unknown":paperDoc.getAbstracts();
         cited_by_count=paperDoc.getCited_by_count();
         publication_date=paperDoc.getPublication_date();
         type=paperDoc.getType();
@@ -70,5 +69,6 @@ public class Paper {
             publisher=JSONUtil.toBean(paperDoc.getPublisher(), DisplayInfo.class);
         else publisher=new DisplayInfo("","暂无");
         issn=paperDoc.getIssn();
+        lan=paperDoc.getLan();
     }
 }

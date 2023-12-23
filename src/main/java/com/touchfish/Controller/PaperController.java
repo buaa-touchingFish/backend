@@ -3,10 +3,7 @@ package com.touchfish.Controller;
 
 import cn.hutool.json.JSONObject;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.FuzzyQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import cn.hutool.json.JSONArray;
@@ -28,11 +25,7 @@ import com.touchfish.Dto.PaperInfo;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
-import com.touchfish.Po.AuthorPaper;
-import com.touchfish.Po.Comment;
-import com.touchfish.Po.Paper;
-import com.touchfish.Po.PaperAppeal;
-import com.touchfish.Po.PaperDoc;
+import com.touchfish.Po.*;
 import com.touchfish.Service.impl.PaperAppealImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.*;
@@ -384,8 +377,8 @@ public class PaperController {
     public Result<List<Paper>> ultraSearch(@RequestBody SearchInfo searchInfo) {
         final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
         final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
-        String fromDate=searchInfo.getFrom_date()==null ? "" : searchInfo.getFrom_date();
-        String toDate=searchInfo.getTo_date()==null? "" : searchInfo.getTo_date();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? null : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
             searchField.add("information");
             searchText.add(searchInfo.getKeyword());
@@ -416,71 +409,29 @@ public class PaperController {
             searchText.add(searchInfo.getIssn());
         }
         if(!searchInfo.getLanguage().equals("")){
-            searchField.add("language");
+            searchField.add("lan");
             searchText.add(searchInfo.getLanguage());
         }
-        if(!searchInfo.getFrom_date().equals("")){
-            searchField.add("from_date");
-            searchText.add(searchInfo.getFrom_date());
-        }
-        if(!searchInfo.getTo_date().equals("")){
-            searchField.add("to_date");
-            searchText.add(searchInfo.getTo_date());
-        }
-        Query query=getQuery(searchText,searchField);
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+
         try {
-            SearchResponse<PaperDoc>searchResponse;
-            if (!fromDate.equals("") && !toDate.equals("")) {
-                searchResponse = client.search(builder -> builder
-                                .index("papers")
-                                .size(10)
-                                .from(pageNum)
-                                .query(query).
-                                aggregations("date", aggregate -> aggregate
-                                        .dateRange(d -> d
-                                                .field("publication_date")
-                                                .ranges(r -> r.
-                                                        from(FieldDateMath.of(f -> f.expr(fromDate))).
-                                                        to(FieldDateMath.of(f -> f.expr(toDate)))))),
-                        PaperDoc.class);
-            } else if (fromDate.equals("") && !toDate.equals("")) {
-                searchResponse = client.search(builder -> builder
-                                .index("papers")
-                                .size(10)
-                                .from(pageNum)
-                                .query(query).
-                                aggregations("date", aggregate -> aggregate
-                                        .dateRange(d -> d
-                                                .field("publication_date")
-                                                .ranges(r -> r.
-                                                        to(FieldDateMath.of(f -> f.expr(toDate)))))),
-                        PaperDoc.class);
-            } else if (!fromDate.equals("") && toDate.equals("")) {
-                searchResponse = client.search(builder -> builder
-                                .index("papers")
-                                .size(10).from(pageNum).query(query).
-                                aggregations("date", aggregate -> aggregate
-                                        .dateRange(d -> d
-                                                .field("publication_date")
-                                                .ranges(r -> r.
-                                                        from(FieldDateMath.of(f -> f.expr(fromDate)))))),
-                        PaperDoc.class);
-            } else {
+           /* SearchResponse<PaperDoc>searchResponse;
                 searchResponse = client.search(builder -> builder
                                 .index("papers")
                                 .size(10)
                                 .from(pageNum).
                                 query(query)
-                        , PaperDoc.class);
-            }
+                        , PaperDoc.class);*/
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
-            for(Hit<PaperDoc>hit:searchResponse.hits().hits()){
+            for(Hit<PaperDoc>hit:response.hits().hits()){
                 papers.add(new Paper(hit.source()));
             }
             return Result.ok("查询成功",papers);
         }
         catch (Exception e){
-            return Result.ok(e.toString());
+            e.printStackTrace();
+            return Result.ok("");
         }
         /*Query query = NativeQuery.builder()
                 .withAggregation("publisher", Aggregation.of(a -> a
@@ -530,8 +481,22 @@ public class PaperController {
         }*/
         //return Result.ok("");
     }
-
     private Query getQuery(List<String> searchText, List<String> searchField) {
+        List<Query>queryList=new ArrayList<>();
+        int i=0;
+        for(;i<searchText.size();i++){
+            final int num=i;
+            Query query=MatchQuery.of(m -> m
+                            .field(searchField.get(num))
+                            .query(searchText.get(num)))
+                    ._toQuery();
+            queryList.add(query);
+        }
+        //Query query= RangeQuery.of(builder -> builder.field("publication_date").from(""))
+        Query query=BoolQuery.of(builder -> builder.must(queryList))._toQuery();
+        return queryList.size()==1?queryList.get(0):query;
+    }
+    private Query getQuery(List<String> searchText, List<String> searchField, String fromDate,String toDate) {
         List<Query>queryList=new ArrayList<>();
         int i=0;
         for(;i<searchText.size();i++){
@@ -541,6 +506,18 @@ public class PaperController {
                     .query(searchText.get(num)))
                     ._toQuery();
             queryList.add(query);
+        }
+        if(fromDate!=null&&toDate!=null) {
+            Query query1 = RangeQuery.of(builder -> builder.field("publication_date").from(fromDate).to(toDate))._toQuery();
+            queryList.add(query1);
+        }
+        else if(fromDate!=null&&toDate==null){
+            Query query1 = RangeQuery.of(builder -> builder.field("publication_date").from(fromDate))._toQuery();
+            queryList.add(query1);
+        }
+        else if(fromDate==null&&toDate!=null) {
+            Query query1 = RangeQuery.of(builder -> builder.field("publication_date").to(toDate))._toQuery();
+            queryList.add(query1);
         }
         Query query=BoolQuery.of(builder -> builder.must(queryList))._toQuery();
         return queryList.size()==1?queryList.get(0):query;
