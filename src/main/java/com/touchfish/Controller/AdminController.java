@@ -139,13 +139,50 @@ public class AdminController {
         return Result.ok("查询未处理申诉成功", fillAppealForm(appealList));
     }
 
-//    @PostMapping ("/handle/appeal")
-//    @LoginCheck
-//    @Operation(summary = "处理申诉", security = { @SecurityRequirement(name = "bearer-key") })
-//    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "申诉id 处理结果(false表示不通过，true为通过)")
-//    public Result<String> handleAppeal(@RequestBody AppealResultInfo appealResultInfo){
-//
-//    }
+    @PostMapping ("/handle/appeal")
+    @LoginCheck
+    @Operation(summary = "处理申诉", security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "申诉id 处理结果(false表示不通过，true为通过)")
+    public Result<String> handleAppeal(@RequestBody AppealResultInfo appealResultInfo){
+        PaperAppeal targetAppeal = paperAppeal.getBaseMapper().selectById(appealResultInfo.getId());
+        String timeNow = getTimeNow();
+        targetAppeal.setHandle_time(timeNow);
+        targetAppeal.setStatus(appealResultInfo.isResult() ? 1 : -1);
+        targetAppeal.setHandler_id(UserContext.getUser().getUid());
+        Paper targetPaper = paper.getBaseMapper().selectById(targetAppeal.getPaper_id());
 
+        if(appealResultInfo.isResult()){
+            targetPaper.setIs_active(false);
+
+            paper.updateById(targetPaper);
+
+            notice.save(new Notice("申诉下架论文成功",
+                    "您申诉的论文" + targetPaper.getTitle() + "已下架",
+                    timeNow,
+                    targetAppeal.getApplicant_id(),
+                    false));
+
+        }
+
+        else {
+            notice.save(new Notice("申诉下架论文失败",
+                    "您申诉下架论文" + targetPaper.getTitle() + "未予以通过",
+                    timeNow,
+                    targetAppeal.getApplicant_id(),
+                    false));
+        }
+
+        return Result.ok("处理申诉成功");
+    }
+
+    @GetMapping ("/myappeal")
+    @LoginCheck
+    @Operation(summary = "获取未处理的申诉", security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "不需要")
+    public Result<List<AppealFormInfo>> getAdminAppeal(){
+        List<PaperAppeal> appealList = paperAppeal.lambdaQuery().
+                eq(PaperAppeal::getHandler_id, UserContext.getUser().getUid()).list();
+        return Result.ok("查询当前管理员处理的申诉成功", fillAppealForm(appealList));
+    }
 
 }

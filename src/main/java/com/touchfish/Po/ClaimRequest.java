@@ -9,7 +9,7 @@ import lombok.Data;
 @TableName("claim_request")
 public class ClaimRequest {
     @TableId(type = IdType.AUTO)
-    int id;
+    private int id;
     int applicant_id;
     int handler_id;
     int status;

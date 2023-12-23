@@ -21,11 +21,13 @@ public class PaperAppeal {
     String create_time;
     String handle_time;
     String paper_id;
+    String content;
 
-    public PaperAppeal(int applicant_id, String create_time, String paper_id) {
+    public PaperAppeal(int applicant_id, String create_time, String paper_id, String content) {
         this.applicant_id = applicant_id;
         this.create_time = create_time;
         this.paper_id = paper_id;
+        this.content = content;
 
         this.status = 0;
     }

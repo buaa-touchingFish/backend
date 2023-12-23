@@ -15,15 +15,16 @@ import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.RefWork;
 import com.touchfish.MiddleClass.RelWork;
 import com.touchfish.Po.Paper;
+import com.touchfish.Po.PaperAppeal;
 import com.touchfish.Po.PaperDoc;
+import com.touchfish.Service.impl.PaperAppealImpl;
 import com.touchfish.Service.impl.PaperImpl;
-import com.touchfish.Tool.OpenAlex;
-import com.touchfish.Tool.RedisKey;
-import com.touchfish.Tool.Result;
+import com.touchfish.Tool.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -36,6 +37,7 @@ import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -56,7 +58,10 @@ public class PaperController {
     private ElasticSearchRepository es;
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
+    @Autowired
     private PaperImpl paperImpl;
+    @Autowired
+    private PaperAppealImpl paperAppeal;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -65,6 +70,12 @@ public class PaperController {
         System.out.println(es.findById("W2029916517"));
         return Result.ok("200");
     }*/
+
+    private static String getTimeNow(){
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(date);
+    }
 
     @PostMapping ("/single")
     @Operation(summary = "点击获取单个文献")
@@ -244,5 +255,23 @@ public class PaperController {
             ans.add(relWork);
         }
         return Result.ok("成功返回",ans);
+    }
+
+    @PostMapping("/create/appeal")
+    @LoginCheck
+    @Operation(summary = "申诉下架论文", security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"content\":\"string\"\n\"" +
+            "paper_id\":\"string\"")
+    public Result<String> createAppeal(@RequestBody Map<String, String> map){
+        String content = map.get("content");
+        String paper_id = map.get("paper_id");
+
+        if(content == null || paper_id == null){
+            return Result.fail("content或paper_id参数未找到");
+        }
+
+        paperAppeal.save(new PaperAppeal(UserContext.getUser().getUid(), getTimeNow(), paper_id, content));
+
+        return Result.ok("创建申诉成功");
     }
 }
