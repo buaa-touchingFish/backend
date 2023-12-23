@@ -107,6 +107,9 @@ public class PaperController {
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
         if (id1 != null){
             PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
+            if (paperInfo.is_active == false){
+                return Result.fail("该文章已被下架");
+            }
             paperInfo.setBrowse(browse);
             paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
             paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
@@ -124,6 +127,9 @@ public class PaperController {
             return Result.ok("成功返回",paperInfo);
         }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
+        if (paper.getIs_active() == false){
+            return Result.fail("该文章已被下架");
+        }
         List<AuthorShip> authorships = paper.getAuthorships();
         List<AuthorShip> authorShipList = mapper.convertValue(authorships, new TypeReference<>() {});
         List<String> referenced_works = paper.getReferenced_works();
