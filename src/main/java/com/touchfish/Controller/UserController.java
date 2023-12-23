@@ -178,7 +178,7 @@ public class UserController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "要认领的学者id 邮箱 验证码  照片")
     public Result<String>  claimHomeCaptcha2(@RequestParam(value = "file", required = false) MultipartFile file,@RequestParam(value = "email") String email,@RequestParam(value = "id") String id,@RequestParam(value = "captcha") String mycaptcha) throws IOException {
         User now_user = UserContext.getUser();
-        if (now_user.getAuthor_id()!=null){
+        if (user.lambdaQuery().eq(User::getUid,now_user.getUid()).one().getAuthor_id() != null){
             return Result.fail("你已认领过门户");
         }
         Author one = authorImpl.lambdaQuery().eq(Author::getId, id).one();

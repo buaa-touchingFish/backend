@@ -4,6 +4,7 @@ package com.touchfish.Controller;
 import cn.hutool.core.convert.Convert;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.touchfish.Dao.ElasticSearchRepository;
+import com.touchfish.Dto.HotPaper;
 import com.touchfish.Dto.SearchInfo;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
@@ -36,8 +37,10 @@ import org.springframework.data.elasticsearch.core.query.BaseQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.SearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -110,11 +113,11 @@ public class PaperController {
         paperInfo.setCited_by_count(paper.getCited_by_count());
         paperInfo.setPublication_date(paper.getPublication_date());
         paperInfo.setPublisher(paperInfo.getPublisher());
-        paperInfo.setAuthors(paper.getAuthorships());
+        paperInfo.setAuthorships(paper.getAuthorships());
         paperInfo.setType(paper.getType());
         paperInfo.setId(paper.getId());
-        paperInfo.setRefWorks(paper.getReferenced_works());
-        paperInfo.setRelWorks(paper.getRelated_works());
+        paperInfo.setReferenced_works(paper.getReferenced_works());
+        paperInfo.setRelated_works(paper.getRelated_works());
         paperInfo.setBrowse(browse);
         paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
         paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
@@ -320,4 +323,15 @@ public class PaperController {
         return Result.ok("取消点赞",ans);
     }
 
+    @GetMapping("/hot")
+    @Operation(summary = "获取热门文献")
+    public Result<List<HotPaper>> getHot(){
+        List<HotPaper> ans = new ArrayList<>();
+        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet().reverseRangeWithScores(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(), 0, 9);
+        for (var a:typedTuples){
+            Paper one = paperImpl.lambdaQuery().eq(Paper::getId, a.getValue()).one();
+            ans.add(new HotPaper(a.getValue(),one.getTitle()));
+        }
+        return Result.ok("成功获取",ans);
+    }
 }

@@ -34,8 +34,6 @@ public class CollectController {
     private CollectImpl collectService;
     @Autowired
     private LabelImpl labelService;
-//    @Autowired
-//    private CollectCntImpl collectCntService;
     @Autowired
     private PaperImpl paperService;
 
@@ -50,13 +48,6 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.saveCollect(user_id, paper_id)) {
-//            CollectCnt collectCnt = collectCntService.getById(paper_id);
-//            if (collectCnt == null)
-//                collectCntService.save(new CollectCnt(paper_id, 1));
-//            else {
-//                collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() + 1);
-//                collectCntService.updateById(collectCnt);
-//            }
             zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,1.0);
             zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,1.0);
             zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
@@ -73,9 +64,6 @@ public class CollectController {
         Integer user_id = Integer.parseInt(map.get("user_id"));
         String paper_id = map.get("paper_id");
         if (collectService.deleteCollect(user_id, paper_id)) {
-//            CollectCnt collectCnt = collectCntService.getById(paper_id);
-//            collectCnt.setCollect_cnt(collectCnt.getCollect_cnt() - 1);
-//            collectCntService.updateById(collectCnt);
             zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,-1.0);
             zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,-1.0);
             zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
