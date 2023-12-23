@@ -306,24 +306,6 @@ public class PaperController {
         return Result.ok("成功返回",ans);
     }
 
-    @PostMapping("/create/appeal")
-    @LoginCheck
-    @Operation(summary = "申诉下架论文", security = { @SecurityRequirement(name = "bearer-key") })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"content\":\"string\"\n\"" +
-            "paper_id\":\"string\"")
-    public Result<String> createAppeal(@RequestBody Map<String, String> map) {
-        String content = map.get("content");
-        String paper_id = map.get("paper_id");
-
-        if (content == null || paper_id == null) {
-            return Result.fail("content或paper_id参数未找到");
-        }
-
-        paperAppeal.save(new PaperAppeal(UserContext.getUser().getUid(), getTimeNow(), paper_id, content));
-
-        return Result.ok("创建申诉成功");
-    }
-
     @GetMapping()
     @Operation(summary = "获取文献总数")
     public Result<Integer> getCount(){
