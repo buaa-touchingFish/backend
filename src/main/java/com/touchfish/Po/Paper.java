@@ -61,10 +61,14 @@ public class Paper {
         while (matcher.find())
             authorships.add(JSONUtil.toBean(matcher.group(),AuthorShip.class));
         keywords= Arrays.asList(paperDoc.getKeywords().substring(1,paperDoc.getKeywords().length()-1).split(","));
-        Abstract=paperDoc.getAbstracts();
+        Abstract=paperDoc.getAbstracts().equals("")?"Unknown":paperDoc.getAbstracts();
         cited_by_count=paperDoc.getCited_by_count();
-        doi=paperDoc.getDoi();
         publication_date=paperDoc.getPublication_date();
         type=paperDoc.getType();
+        String a=paperDoc.getPublisher();
+        if(!paperDoc.getPublisher().equals("null"))
+            publisher=JSONUtil.toBean(paperDoc.getPublisher(), DisplayInfo.class);
+        else publisher=new DisplayInfo("","暂无");
+        issn=paperDoc.getIssn();
     }
 }

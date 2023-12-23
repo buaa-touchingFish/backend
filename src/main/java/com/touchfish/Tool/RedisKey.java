@@ -6,4 +6,5 @@ public class RedisKey {
 
     public static final String PAPER_KEY = "paper:";
     public static final String AUTHOR_KEY = "author:";
+    public static final String SEARCH_KEY = "search:";
 }
