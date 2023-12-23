@@ -196,7 +196,11 @@ public class UserController {
         InputStream inputStream = file.getInputStream();
         String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
         ClaimRequest claimRequest = new ClaimRequest(now_user.getUid(),getTimeNow(),id,upload);
-        boolean save = claimRequestImpl.save(claimRequest);
+        boolean save = true;
+        if (!claimRequestImpl.lambdaQuery().eq(ClaimRequest::getAuthor_id,id).eq(ClaimRequest::getApplicant_id,now_user.getUid()).exists()){
+            save = claimRequestImpl.save(claimRequest);
+        }
+       
         //作者表要更新
         if (save){
             return Result.ok("等待管理员审核");

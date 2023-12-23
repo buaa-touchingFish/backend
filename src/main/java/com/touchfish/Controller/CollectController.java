@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.Po.Collect;
-import com.touchfish.Po.CollectCnt;
 import com.touchfish.Po.Label;
 import com.touchfish.Po.Paper;
 import com.touchfish.ReturnClass.RetCollectPaperInfo;
-import com.touchfish.Service.impl.CollectCntImpl;
+
 import com.touchfish.Service.impl.CollectImpl;
 import com.touchfish.Service.impl.LabelImpl;
 import com.touchfish.Service.impl.PaperImpl;
