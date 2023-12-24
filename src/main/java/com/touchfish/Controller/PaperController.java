@@ -19,14 +19,11 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.qiniu.util.Json;
 import com.touchfish.Dao.ElasticSearchRepository;
-import com.touchfish.Dto.HotPaper;
-import com.touchfish.Dto.SearchInfo;
+import com.touchfish.Dto.*;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.touchfish.Dto.PaperInfo;
-import com.touchfish.Dto.SuggestInfo;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.MiddleClass.RefWork;
@@ -265,7 +262,42 @@ public class PaperController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\",\"institution\":\"机构\"")
     public Result<List<Paper>> searchKeyword(@RequestBody SearchInfo searchInfo) {
         final int pageNum = Math.max(searchInfo.getPageNum(), 0);
-        String keyword = searchInfo.getKeyword();
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
+        }
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
+            }
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        Query query=getQuery(searchText,searchField);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
+        /*String keyword = searchInfo.getKeyword();
         String author = searchInfo.getAuthor();
         String institution = searchInfo.getInstitution();
         String publisher = searchInfo.getPublisher();
@@ -289,41 +321,9 @@ public class PaperController {
         for (PaperDoc paperDoc : page) {
             papers.add(new Paper(paperDoc));
         }
-        /*if(pageNum==0){
-            try{
-                co.elastic.clients.elasticsearch._types.query_dsl.Query query1 = MatchQuery.of(m -> m
-                        .field(searchField)
-                        .query(searchText)
-                )._toQuery();
-                SearchResponse<Void> searchresponse = client.search(b -> b
-                                .index("papers")
-                                .size(0)
-                                .query(query1)
-                                .aggregations("lan", a -> a
-                                        .terms(ta -> ta.field("lan"))
-                                )
-                                .aggregations("type",a->a.terms(ta -> ta.field("type")))
-                                .aggregations("publisher",a->a.terms(ta -> ta.field("publisher")))
-                                .aggregations("date",a->a.terms(ta -> ta.field("publication_date"))),
-                        Void.class
-                );
-                List<StringTermsBucket> lan = searchresponse.aggregations()
-                        .get("lan").sterms().buckets().array();
-                List<StringTermsBucket>type=searchresponse.aggregations().get("type").sterms().buckets().array();
-                List<StringTermsBucket>publisherBucket=searchresponse.aggregations().get("publisher").sterms().buckets().array();
-                List<LongTermsBucket>date=searchresponse.aggregations().get("date").lterms().buckets().array();
-                for (StringTermsBucket bucket : lan) {
-                    System.out.println(bucket.docCount() + " " + bucket.key()._get().toString());
-                }
-            }
-            catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-*/
         String result = JSONUtil.toJsonStr(papers);
         stringRedisTemplate.opsForValue().set(RedisKey.SEARCH_KEY + searchInfo, result, 1, TimeUnit.DAYS);
-        return Result.ok("查询成功", papers);
+        return Result.ok("查询成功", papers);*/
     }
 
     @PostMapping("/aggregate")
@@ -388,22 +388,34 @@ public class PaperController {
                 List<RangeBucket> date = searchresponse.aggregations().get("date").dateRange().buckets().array();
                 JSONObject combined=new JSONObject();
                 combined.put("sum",count);
-                combined.put("lan",new JSONObject());
+                /*combined.put("lan",new JSONObject());
                 combined.put("type",new JSONObject());
                 combined.put("publisher",new JSONObject());
-                combined.put("date",new JSONObject());
+                combined.put("date",new JSONObject());*/
+                List<AggregateInfo>laninfo=new ArrayList<>();
+                List<AggregateInfo>typeinfo=new ArrayList<>();
+                List<AggregateInfo>publisherinfo=new ArrayList<>();
+                List<AggregateInfo>dateinfo=new ArrayList<>();
                 for (StringTermsBucket bucket : lan) {
-                    ((JSONObject)combined.get("lan")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("lan")).put(bucket.key()._get().toString(),bucket.docCount());
+                    laninfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : type) {
-                    ((JSONObject)combined.get("type")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("type")).put(bucket.key()._get().toString(),bucket.docCount());
+                    typeinfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : publisherBucket) {
-                    ((JSONObject)combined.get("publisher")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("publisher")).put(bucket.key()._get().toString(),bucket.docCount());
+                    publisherinfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
                 }
                 for (RangeBucket bucket : date) {
-                    ((JSONObject)combined.get("date")).put(bucket.toAsString(), bucket.docCount());
+                    //((JSONObject)combined.get("date")).put(bucket.toAsString(), bucket.docCount());
+                    dateinfo.add(new AggregateInfo(bucket.toAsString(),bucket.docCount()));
                 }
+                combined.put("lan",laninfo);
+                combined.put("type",typeinfo);
+                combined.put("publisher",publisherinfo);
+                combined.put("date",dateinfo);
                 return Result.ok("",combined);
             } catch (Exception e) {
                 return Result.fail(e.toString());
