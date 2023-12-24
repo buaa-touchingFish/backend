@@ -4,6 +4,7 @@ package com.touchfish.Controller;
 import cn.hutool.json.JSONObject;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import cn.hutool.json.JSONArray;
@@ -100,6 +101,7 @@ public class PaperController {
 
     @Autowired
     private AuthorPaperImpl authorPaperImpl;
+    private CountRequest.Builder c;
 
     public static ElasticsearchClient createClient() {
         String serverUrl = "http://121.36.81.4:9200";
@@ -378,7 +380,7 @@ public class PaperController {
                                                         to(FieldDateMath.of(f -> f.expr("now")))))),
                         Void.class
                 );
-                long count = client.count(c -> c.query(query)).count();
+                long count = client.count(c -> c.index("papers").query(query)).count();
                 List<StringTermsBucket> lan = searchresponse.aggregations()
                         .get("lan").sterms().buckets().array();
                 List<StringTermsBucket> type = searchresponse.aggregations().get("type").sterms().buckets().array();
