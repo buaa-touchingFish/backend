@@ -56,17 +56,20 @@ public class CollectController {
     @PostMapping("/delete")
     @LoginCheck
     @Operation(summary = "取消收藏", security = {@SecurityRequirement(name = "bearer-key")})
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"paper_id\":\"文章id\"")
-    public Result<String> deleteCollect(@RequestBody Map<String, String> map) {
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"paper_id\":\"[文章id,...]\"")
+    public Result<String> deleteCollect(@RequestBody Map<String, List<String>> map) {
         Integer user_id = UserContext.getUser().getUid();
-        String paper_id = map.get("paper_id");
-        if (collectService.deleteCollect(user_id, paper_id)) {
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY, paper_id, -1.0);
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), paper_id, -1.0);
-            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), 2l, TimeUnit.DAYS);
-            return Result.ok("取消收藏成功");
-        } else
-            return Result.fail("未收藏");
+//        String paper_id = map.get("paper_id");
+        List<String> paper_ids = map.get("paper_id");
+        for(String paper_id : paper_ids)
+        {
+            if (collectService.deleteCollect(user_id, paper_id)) {
+                zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY, paper_id, -1.0);
+                zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), paper_id, -1.0);
+                zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), 2l, TimeUnit.DAYS);
+            }
+        }
+        return Result.ok("取消收藏成功");
     }
 
     @GetMapping
