@@ -27,34 +27,38 @@ public class InstitutionController {
 
     @Autowired
     private InstitutionAuthorImpl institutionAuthor;
-    
+
     @Autowired
     private AuthorImpl author;
 
-    /** 通过id获取机构
-     * */
+    /**
+     * 通过id获取机构
+     */
     @PostMapping("/get")
     @Operation(summary = "获取机构")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "机构id")
-    public Result<InstitutionWithAuthorInfo> getInstitutionById(@RequestBody Map<String, String> map)
-    {
-        Institution targetInstitution = institution.getBaseMapper().selectById(map.get("id"));
-        if(targetInstitution == null)
-        {
-            return Result.fail("id not exist");
+    public Result<InstitutionWithAuthorInfo> getInstitutionById(@RequestBody Map<String, String> map) {
+        String id = map.get("id");
+        System.out.println(id);
+        Institution targetInstitution = institution.getById(id);
+        if (targetInstitution == null) {
+            targetInstitution = institution.updateInstFromOpenAlex(id);
+            if (institutionAuthor.getById(id) == null)
+                institutionAuthor.save(new InstitutionAuthor(id, new ArrayList<>()));
+//            return Result.fail("id not exist");
         }
 
-        InstitutionAuthor members = institutionAuthor.getBaseMapper().selectById(map.get("id"));
-        if(members == null)
-        {
-            return Result.fail("id not exist");
-        }
+        InstitutionAuthor members = institutionAuthor.getBaseMapper().selectById(id);
+//        if(members == null)
+//        {
+//            return Result.fail("id not exist");
+//        }
 
         InstitutionWithAuthorInfo institutionWithAuthorInfo = new InstitutionWithAuthorInfo();
         institutionWithAuthorInfo.setInstitution(targetInstitution);
 
         List<Author> authorList = new ArrayList<>();
-        if(members.getAuthor_ids() != null) {
+        if (members.getAuthor_ids() != null) {
             for (String eachAuthorId : members.getAuthor_ids()) {
                 Author targetAuthor = author.getBaseMapper().selectById(eachAuthorId);
                 authorList.add(targetAuthor);
