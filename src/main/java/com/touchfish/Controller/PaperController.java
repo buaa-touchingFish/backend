@@ -713,17 +713,21 @@ public class PaperController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
     public Result<String>  getCite(@RequestBody Map<String,String> mp){
         Paper one = paperImpl.lambdaQuery().eq(Paper::getId,mp.get("id")).one();
+        ObjectMapper objectMapper = new ObjectMapper();
         StringBuilder s = new StringBuilder();
         if (one.getAuthorships().size()>0){
-            AuthorShip authorShip = one.getAuthorships().get(0);
+            List<AuthorShip> authorships = one.getAuthorships();
+            List<AuthorShip> authorShipList = objectMapper.convertValue(authorships, new TypeReference<>() {
+            });
+            AuthorShip authorShip = authorShipList.get(0);
             String[] s1 = authorShip.getAuthor().getDisplay_name().split(" ");
             s.append(s1[0]);
             if (s1.length>1){
-                s.append(Character.toUpperCase(s1[1].charAt(0)));
+                s.append(",").append(Character.toUpperCase(s1[1].charAt(0))).append(".");
             }
         }
         String s1 = one.getPublication_date().split("-")[0];
-        s.append("("+s1+").").append(one.getTitle()).append(".").append(one.getPublisher());
+        s.append("("+s1+").").append(one.getTitle()).append(".").append(one.getPublisher().display_name);
         return Result.ok(s.toString());
     }
 }

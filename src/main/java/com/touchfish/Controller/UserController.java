@@ -175,7 +175,7 @@ public class UserController {
 
     @PostMapping("/changepwd1")
     @LoginCheck
-    @Operation(summary = "找回密码",security = { @SecurityRequirement(name = "bearer-key") })
+    @Operation(summary = "修改密码",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"oldpwd\": ,\"newpwd:\"")
     public Result<String> changePwd1(@RequestBody Map<String,String> mp){
         String oldPwd = mp.get("oldpwd");
