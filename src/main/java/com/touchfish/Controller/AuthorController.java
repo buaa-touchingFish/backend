@@ -1,5 +1,6 @@
 package com.touchfish.Controller;
 
+import cn.hutool.core.lang.hash.Hash;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +56,7 @@ public class AuthorController {
             return Result.ok("查看学者门户成功", authorHome);
         }
         List<Paper> papers = new ArrayList<>();
+        HashMap<CoAuthor, String> map = new HashMap<>();        //coAuthor -> paper_id
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
         Author author = authorService.getById(author_id);
         if (author == null)
@@ -88,6 +90,7 @@ public class AuthorController {
                 if (!flag) {
                     coAuthor = new CoAuthor(ship_author.getId());
                     CoAuthors.put(coAuthor, 1);
+                    map.put(coAuthor, author_paper_id);
                 }
             }
         }
@@ -101,7 +104,7 @@ public class AuthorController {
         for (CoAuthor coAuthor : returnCoAuthors) {
             Author author1 = authorService.getById(coAuthor.getId());
             if (author1 == null)
-                author1 = getAuthorFromOpenAlex(coAuthor.getId(), null);
+                author1 = getAuthorFromOpenAlex(coAuthor.getId(), map.get(coAuthor));
             coAuthor.setDisplay_name(author1.getDisplay_name());
             if (author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
