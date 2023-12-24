@@ -52,7 +52,7 @@ public class SubscribeController {
             return Result.fail("已订阅");
     }
 
-    @DeleteMapping
+    @PostMapping("/delete")
     @LoginCheck
     @Operation(summary = "取消订阅", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"author_id\":\"学者id\"")
