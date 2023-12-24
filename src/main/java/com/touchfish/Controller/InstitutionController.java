@@ -3,11 +3,14 @@ package com.touchfish.Controller;
 import cn.hutool.json.JSONUtil;
 import com.touchfish.Dto.InstitutionWithAuthorInfo;
 import com.touchfish.Po.Author;
+import com.touchfish.Po.AuthorPaper;
 import com.touchfish.Po.Institution;
 import com.touchfish.Po.InstitutionAuthor;
 import com.touchfish.Service.impl.AuthorImpl;
+import com.touchfish.Service.impl.AuthorPaperImpl;
 import com.touchfish.Service.impl.InstitutionAuthorImpl;
 import com.touchfish.Service.impl.InstitutionImpl;
+import com.touchfish.Tool.OpenAlex;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +33,8 @@ public class InstitutionController {
     
     @Autowired
     private AuthorImpl author;
+
+    private AuthorPaperImpl authorPaperImpl;
 
     /** 通过id获取机构
      * */
@@ -57,6 +62,14 @@ public class InstitutionController {
         if(members.getAuthor_ids() != null) {
             for (String eachAuthorId : members.getAuthor_ids()) {
                 Author targetAuthor = author.getBaseMapper().selectById(eachAuthorId);
+                if (targetAuthor == null){
+                    targetAuthor = (Author) OpenAlex.sendResponse("author",eachAuthorId);
+                    author.saveOrUpdate(targetAuthor);
+                    if (!authorPaperImpl.lambdaQuery().eq(AuthorPaper::getId,targetAuthor.getId()).exists()){
+                        AuthorPaper authorPaper = new AuthorPaper(targetAuthor.getId(),new ArrayList<>());
+                        authorPaperImpl.saveOrUpdate(authorPaper);
+                    }
+                }
                 authorList.add(targetAuthor);
             }
         }
