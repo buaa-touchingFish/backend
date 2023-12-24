@@ -1,18 +1,19 @@
 package com.touchfish.Controller;
 
-import com.touchfish.Dto.AppealFormInfo;
-import com.touchfish.Dto.AppealResultInfo;
-import com.touchfish.Dto.ClaimFormInfo;
-import com.touchfish.Dto.ClaimResultInfo;
+import cn.hutool.json.JSONUtil;
+import com.touchfish.Dto.*;
 import com.touchfish.Po.*;
 import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.LoginCheck;
+import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
 import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
@@ -36,6 +37,10 @@ public class AdminController {
     private PaperAppealImpl paperAppeal;
     @Autowired
     private PaperImpl paper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -155,6 +160,7 @@ public class AdminController {
             targetPaper.setIs_active(false);
 
             paper.updateById(targetPaper);
+            stringRedisTemplate.delete(RedisKey.PAPER_KEY+targetPaper.getId());
 
             notice.save(new Notice("申诉下架论文成功",
                     "您申诉的论文" + targetPaper.getTitle() + "已下架",
