@@ -1,8 +1,12 @@
 package com.touchfish.Controller;
 
+import com.touchfish.Po.Author;
 import com.touchfish.Po.SubscribeCnt;
+import com.touchfish.ReturnClass.RetSubscribe;
+import com.touchfish.Service.impl.AuthorImpl;
 import com.touchfish.Service.impl.SubscribeCntImpl;
 import com.touchfish.Service.impl.SubscribeImpl;
+import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,6 +27,10 @@ public class SubscribeController {
     private SubscribeImpl subscribeService;
     @Autowired
     private SubscribeCntImpl subscribeCntService;
+    @Autowired
+    private AuthorImpl authorService;
+    @Autowired
+    private UserImpl userService;
 
     @PostMapping
     @LoginCheck
@@ -63,8 +72,18 @@ public class SubscribeController {
     @LoginCheck
     @Operation(summary = "获取订阅列表", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
-    public Result<ArrayList<String>> getAuthorByUser(Integer user_id) {
-        ArrayList<String> subscribes = subscribeService.getSubscribes(user_id);
-        return Result.ok("获取订阅列表成功", subscribes);
+    public Result<List<RetSubscribe>> getAuthorByUser(Integer user_id) {
+        List<String> subscribes = subscribeService.getSubscribes(user_id);
+        List<RetSubscribe> list = new ArrayList<>();
+        for (String author_id : subscribes) {
+            Author author = authorService.getById(author_id);
+            String avatar = "s5usfv19s.hb-bkt.clouddn.com/v2-bf64744df8acc282dbb90c6ddfe8379c_r.jpg";
+            Integer claimUid = author.getClaim_uid();
+            if (claimUid != null)
+                avatar = userService.getById(claimUid).getAvatar();
+            RetSubscribe retSubscribe = new RetSubscribe(author.getId(), author.getDisplay_name(), author.getLast_known_institution(), avatar);
+            list.add(retSubscribe);
+        }
+        return Result.ok("获取订阅列表成功", list);
     }
 }
