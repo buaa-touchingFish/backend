@@ -87,7 +87,7 @@ public class CollectController {
             });
             for (AuthorShip authorShip : authorships)
                 authors.add(authorShip.getAuthor().getDisplay_name());
-            String publisher_display_name = null;
+            String publisher_display_name = "";
             if(paper.getPublisher()!=null)
                 publisher_display_name = paper.getPublisher().display_name;
             RetCollectPaperInfo retCollectPaperInfo = new RetCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, publisher_display_name, paper.getCited_by_count(), collectInfo.getLabels());
