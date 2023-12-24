@@ -2,6 +2,7 @@ package com.touchfish.Controller;
 
 
 import cn.hutool.json.JSONObject;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.CountRequest;
@@ -433,7 +434,7 @@ public class PaperController {
         final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
         final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
-        String toDate=searchInfo.getTo_date().equals("")? null : searchInfo.getTo_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
             searchField.add("information");
             searchText.add(searchInfo.getKeyword());
@@ -470,13 +471,6 @@ public class PaperController {
         Query query=getQuery(searchText,searchField,fromDate,toDate);
 
         try {
-           /* SearchResponse<PaperDoc>searchResponse;
-                searchResponse = client.search(builder -> builder
-                                .index("papers")
-                                .size(10)
-                                .from(pageNum).
-                                query(query)
-                        , PaperDoc.class);*/
             SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
             for(Hit<PaperDoc>hit:response.hits().hits()){
@@ -488,53 +482,132 @@ public class PaperController {
             e.printStackTrace();
             return Result.ok("");
         }
-        /*Query query = NativeQuery.builder()
-                .withAggregation("publisher", Aggregation.of(a -> a
-                        .terms(ta -> ta.field("lan"))))
-                .withQuery(q -> q
-                        .match(m -> m
-                                .field("information")
-                                .query("computer")
-                        )
-                )
-                //.withPageable(pageable)
-                .build();*/
-        //ElasticsearchTemplate elasticsearchTemplate1=new ElasticsearchTemplate();
-        //elasticsearchTemplate1.search();
-        /*SearchHits<PaperDoc> paperDocSearchHits = elasticsearchTemplate.search(query, PaperDoc.class);
-        System.out.println(paperDocSearchHits);*/
-        //long a = elasticsearchOperations.count(query,PaperDoc.class);
-        /*for(SearchHit<PaperDoc>paper:searchHits){
-            System.out.println(paper.getContent());
+    }
+    @PostMapping("/timeSearch")
+    @Operation(summary = "搜索时间排序")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",剩下的见类中定义")
+    public Result<List<Paper>> timeSearch(@RequestBody SearchInfo searchInfo) {
+        final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
         }
-        system.out.println(a);
-        /*try {
-
-            String searchText = "computer";
-
-            co.elastic.clients.elasticsearch._types.query_dsl.Query query1 = MatchQuery.of(m -> m
-                    .field("information")
-                    .query(searchText)
-            )._toQuery();
-            SearchResponse<Void> searchresponse = client.search(b -> b
-                            .index("papers")
-                            .size(0)
-                            .query(query1)
-                            .aggregations("publisher", a -> a
-                                    .terms(ta -> ta.field("lan"))
-                            ),
-                    Void.class
-            );
-            List<StringTermsBucket> buckets = searchresponse.aggregations()
-                    .get("publisher").sterms().buckets().array();
-
-            for (StringTermsBucket bucket : buckets) {
-                System.out.println(bucket.docCount() + " " + bucket.key()._get().toString());
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
             }
-        } catch (Exception e) {
-            System.out.println(e);
-        }*/
-        //return Result.ok("");
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        if(!searchInfo.getType().equals("")){
+            searchField.add("type");
+            searchText.add(searchInfo.getType());
+        }
+        if(!searchInfo.getIssn().equals("")){
+            searchField.add("issn");
+            searchText.add(searchInfo.getIssn());
+        }
+        if(!searchInfo.getLanguage().equals("")){
+            searchField.add("lan");
+            searchText.add(searchInfo.getLanguage());
+        }
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder
+                    .index("papers")
+                    .size(10)
+                    .from(pageNum)
+                    .query(query)
+                    .sort(s->s
+                            .field(f->f
+                                    .field("publication_date").order(SortOrder.Desc))),
+                    PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
+    }
+    @PostMapping("/citeSearch")
+    @Operation(summary = "被引用量排序")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",剩下的见类中定义")
+    public Result<List<Paper>> citeSearch(@RequestBody SearchInfo searchInfo) {
+        final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
+        }
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
+            }
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        if(!searchInfo.getType().equals("")){
+            searchField.add("type");
+            searchText.add(searchInfo.getType());
+        }
+        if(!searchInfo.getIssn().equals("")){
+            searchField.add("issn");
+            searchText.add(searchInfo.getIssn());
+        }
+        if(!searchInfo.getLanguage().equals("")){
+            searchField.add("lan");
+            searchText.add(searchInfo.getLanguage());
+        }
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder
+                            .index("papers")
+                            .size(10)
+                            .from(pageNum)
+                            .query(query)
+                            .sort(s->s
+                                    .field(f->f
+                                            .field("cited_by_count").order(SortOrder.Desc))),
+                    PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
     }
     @PostMapping("/suggest")
     @Operation(summary = "获取搜索推荐")
