@@ -51,7 +51,8 @@ public class CommentController {
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
         for(Comment comment:list)
         {
-            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id());
+            String ava = userService.getById(comment.getSender_id()).getAvatar();
+            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id(),ava);
             retComments.add(retComment);
         }
         return Result.ok("获取评论列表成功", retComments);
