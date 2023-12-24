@@ -187,6 +187,7 @@ public class PaperController {
 
 
         PaperInfo paperInfo = new PaperInfo();
+        paperInfo.setOa_url(paper.getOa_url());
         paperInfo.setAbstract(paper.getAbstract());
         paperInfo.setIssn(paper.getIssn());
         paperInfo.setDoi(paper.getDoi());
