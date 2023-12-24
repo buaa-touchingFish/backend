@@ -69,7 +69,10 @@ public class Paper {
         publication_date=paperDoc.getPublication_date();
         type=paperDoc.getType();
         String a=paperDoc.getPublisher();
-        if(!paperDoc.getPublisher().equals("null"))
+        if(paperDoc.getPublisher()==null){
+            publisher=new DisplayInfo("","暂无");
+        }
+        else if(!paperDoc.getPublisher().equals("null"))
             publisher=JSONUtil.toBean(paperDoc.getPublisher(), DisplayInfo.class);
         else publisher=new DisplayInfo("","暂无");
         issn=paperDoc.getIssn();
