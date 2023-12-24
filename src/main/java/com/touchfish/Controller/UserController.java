@@ -70,6 +70,15 @@ public class UserController {
         return formatter.format(date);
     }
 
+    @GetMapping("/getInfo")
+    @LoginCheck
+    @Operation(summary = "获取个人信息",security = { @SecurityRequirement(name = "bearer-key") })
+    public  Result<UserInfo> getUserInfo(){
+        User myUser = UserContext.getUser();
+        User one = user.lambdaQuery().eq(User::getUid, myUser.getUid()).one();
+        UserInfo info = new UserInfo(one.getUsername(),one.getEmail(),one.getPhone(),one.getAvatar(),one.getUid(),one.getAuthor_id());
+        return Result.ok("成功获取个人信息",info);
+    }
 
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
