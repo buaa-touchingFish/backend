@@ -9,4 +9,5 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HotPaper {
     String id; //文献id
     String title;//文献题目
+    Integer browse;//浏览数
 }

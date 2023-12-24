@@ -70,6 +70,7 @@ public class UserController {
         return formatter.format(date);
     }
 
+
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "验证码 \"email\":")
@@ -118,7 +119,8 @@ public class UserController {
 
         stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
 
-        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid()));
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar()));
+
     }
 
     @PostMapping("/outlogin")
@@ -132,7 +134,7 @@ public class UserController {
 
 
     @PostMapping("/findpwd")
-    @Operation(summary = "修改/找回密码时发送验证码")
+    @Operation(summary = "找回密码时发送验证码")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "验证码 \"email\":")
     public Result<String> findPwd(@RequestBody Map<String,String> json){
         String email = json.get("email");
@@ -146,7 +148,7 @@ public class UserController {
     }
 
     @PostMapping("/changepwd")
-    @Operation(summary = "修改/找回密码验证码确认")
+    @Operation(summary = "找回密码验证码确认")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱 新密码 验证码")
     public Result<String> changePwd( @RequestBody PwdChangeInfo pwdChangeInfo){
         String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+pwdChangeInfo.getEmail());
@@ -161,6 +163,26 @@ public class UserController {
         if (update)  return Result.ok("成功修改密码");
         else return Result.fail("修改密码失败");
     }
+
+    @PostMapping("/changepwd1")
+    @LoginCheck
+    @Operation(summary = "找回密码",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"oldpwd\": ,\"newpwd:\"")
+    public Result<String> changePwd1(@RequestBody Map<String,String> mp){
+        String oldPwd = mp.get("oldpwd");
+        String newPwd = mp.get("newpwd");
+        User myUser = UserContext.getUser();
+        if (myUser.getPassword().equals(oldPwd)){
+            myUser.setPassword(newPwd);
+            User byId = user.getById(myUser.getUid());
+            byId.setPassword(newPwd);
+            boolean flag = user.updateById(byId);
+            if (flag) return Result.ok("修改密码成功");
+            else return Result.fail("修改密码失败");
+        }
+        return Result.fail("原密码错误");
+    }
+
 
     @PostMapping("/claimcaptcha1")
     @LoginCheck
@@ -285,6 +307,7 @@ public class UserController {
 
         return Result.ok("创建申诉成功");
     }
+
 
 }
 

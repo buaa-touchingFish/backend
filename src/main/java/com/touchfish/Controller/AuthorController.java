@@ -46,7 +46,6 @@ public class AuthorController {
 
     @GetMapping
     @Operation(summary = "获取学者门户")
-    //todo:coauthor拆出来
     public Result<AuthorHome> getAuthorHome(String author_id, String paper_id) {
         String id = stringRedisTemplate.opsForValue().get(RedisKey.AUTHOR_KEY + author_id);
         if (id != null) {
