@@ -52,10 +52,8 @@ public class CommentController {
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
         for(Comment comment:list)
         {
-            String avatar = "s5usfv19s.hb-bkt.clouddn.com/OIP-C.jpg";
-            if(userService.getById(comment.getSender_id()).getAvatar()!=null)
-                avatar = userService.getById(comment.getSender_id()).getAvatar();
-            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), avatar, comment.getSend_time(), comment.getReceiver_id());
+            String ava = userService.getById(comment.getSender_id()).getAvatar();
+            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id(),ava);
             retComments.add(retComment);
         }
         return Result.ok("获取评论列表成功", retComments);

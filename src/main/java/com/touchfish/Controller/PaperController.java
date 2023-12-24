@@ -4,11 +4,15 @@ package com.touchfish.Controller;
 import cn.hutool.json.JSONObject;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import cn.hutool.json.JSONArray;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.search.CompletionSuggest;
+import co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
@@ -22,6 +26,7 @@ import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.Dto.PaperInfo;
+import com.touchfish.Dto.SuggestInfo;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CollectInfo;
 import com.touchfish.MiddleClass.RefWork;
@@ -60,6 +65,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
@@ -95,6 +101,7 @@ public class PaperController {
 
     @Autowired
     private AuthorPaperImpl authorPaperImpl;
+    private CountRequest.Builder c;
 
     public static ElasticsearchClient createClient() {
         String serverUrl = "http://121.36.81.4:9200";
@@ -373,7 +380,7 @@ public class PaperController {
                                                         to(FieldDateMath.of(f -> f.expr("now")))))),
                         Void.class
                 );
-                long count = client.count(c -> c.query(query)).count();
+                long count = client.count(c -> c.index("papers").query(query)).count();
                 List<StringTermsBucket> lan = searchresponse.aggregations()
                         .get("lan").sterms().buckets().array();
                 List<StringTermsBucket> type = searchresponse.aggregations().get("type").sterms().buckets().array();
@@ -515,6 +522,24 @@ public class PaperController {
             System.out.println(e);
         }*/
         //return Result.ok("");
+    }
+    @PostMapping("/suggest")
+    @Operation(summary = "获取搜索推荐")
+    private Result<List<String>> getSuggestions(@RequestBody SuggestInfo suggestInfo){
+        try {
+            List<String>list = new ArrayList<String>();
+            String query = suggestInfo.getQuery();
+            SearchResponse<Void> searchResponse=client.search(c->c.index("works").size(5).suggest(s->s.suggesters("mysuggest",s1->s1.prefix(query).completion(co->co.field("suggestInform")))),Void.class);
+            Collection<List<Suggestion<Void>>> completionSuggestOptions=searchResponse.suggest().values();
+            List<Suggestion<Void>> suggestions=completionSuggestOptions.stream().toList().get(0);
+            Suggestion<Void> suggestion=suggestions.get(0)._get()._toSuggestion();
+            for(CompletionSuggestOption<Void> option:((CompletionSuggest<Void>)suggestion._get()).options())
+                list.add(option.text());
+            return Result.ok("",list);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Result.ok("");
+        }
     }
     private Query getQuery(List<String> searchText, List<String> searchField) {
         List<Query>queryList=new ArrayList<>();
