@@ -693,4 +693,23 @@ public class PaperController {
         }
         return Result.ok("成功获取",ans);
     }
+
+    @PostMapping("/getcitation")
+    @Operation(summary = "获取文献引用")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<String>  getCite(@RequestBody Map<String,String> mp){
+        Paper one = paperImpl.lambdaQuery().eq(Paper::getId,mp.get("id")).one();
+        StringBuilder s = new StringBuilder();
+        if (one.getAuthorships().size()>0){
+            AuthorShip authorShip = one.getAuthorships().get(0);
+            String[] s1 = authorShip.getAuthor().getDisplay_name().split(" ");
+            s.append(s1[0]);
+            if (s1.length>1){
+                s.append(Character.toUpperCase(s1[1].charAt(0)));
+            }
+        }
+        String s1 = one.getPublication_date().split("-")[0];
+        s.append("("+s1+").").append(one.getTitle()).append(".").append(one.getPublisher());
+        return Result.ok(s.toString());
+    }
 }
