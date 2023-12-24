@@ -149,10 +149,11 @@ public class PaperController {
         User myUser = UserContext.getUser();
         ObjectMapper mapper = new ObjectMapper();
         ThreadUtil.execute(()->{
-            stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
-            zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
-            zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
-
+            if (paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).exists()){
+                stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
+                zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
+                zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+            }
         });
         Integer browse = zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY, json.get("id"), 1.0);
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
@@ -727,7 +728,10 @@ public class PaperController {
             }
         }
         String s1 = one.getPublication_date().split("-")[0];
-        s.append("("+s1+").").append(one.getTitle()).append(".").append(one.getPublisher().display_name);
-        return Result.ok(s.toString());
+        s.append("("+s1+").").append(one.getTitle()).append(".");
+        if (one.getPublisher() != null){
+            s.append(one.getPublisher().display_name);
+        }
+        return Result.ok("成功返回",s.toString());
     }
 }
