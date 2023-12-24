@@ -45,9 +45,9 @@ public class CollectController {
         Integer user_id = UserContext.getUser().getUid();
         String paper_id = map.get("paper_id");
         if (collectService.saveCollect(user_id, paper_id)) {
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,1.0);
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,1.0);
-            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY, paper_id, 1.0);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), paper_id, 1.0);
+            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), 2l, TimeUnit.DAYS);
             return Result.ok("收藏成功");
         } else
             return Result.fail("已收藏");
@@ -61,9 +61,9 @@ public class CollectController {
         Integer user_id = UserContext.getUser().getUid();
         String paper_id = map.get("paper_id");
         if (collectService.deleteCollect(user_id, paper_id)) {
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY,paper_id,-1.0);
-            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),paper_id,-1.0);
-            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY+RedisKey.getEveryDayKey(),2l, TimeUnit.DAYS);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY, paper_id, -1.0);
+            zsetRedis.incrementScore(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), paper_id, -1.0);
+            zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), 2l, TimeUnit.DAYS);
             return Result.ok("取消收藏成功");
         } else
             return Result.fail("未收藏");
@@ -88,7 +88,7 @@ public class CollectController {
             for (AuthorShip authorShip : authorships)
                 authors.add(authorShip.getAuthor().getDisplay_name());
             String publisher_display_name = "";
-            if(paper.getPublisher()!=null)
+            if (paper.getPublisher() != null)
                 publisher_display_name = paper.getPublisher().display_name;
             RetCollectPaperInfo retCollectPaperInfo = new RetCollectPaperInfo(collectInfo.getPaper_id(), paper.getTitle(), authors, publisher_display_name, paper.getCited_by_count(), collectInfo.getLabels());
             retCollectPaperInfos.add(retCollectPaperInfo);
@@ -104,18 +104,14 @@ public class CollectController {
         Integer user_id = UserContext.getUser().getUid();
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
-        if (paper_id != null)
-        {
-            if (collectService.addLabel(user_id, paper_id, label_name))
-            {
+        if (paper_id != null) {
+            if (collectService.addLabel(user_id, paper_id, label_name)) {
                 labelService.addLabel(user_id, label_name, true);
                 return Result.ok("添加标签成功");
             } else
                 return Result.fail("已添加");
-        }
-        else
-        {
-            if(labelService.addLabel(user_id, label_name, false))
+        } else {
+            if (labelService.addLabel(user_id, label_name, false))
                 return Result.ok("添加标签成功");
             else
                 return Result.fail("已添加");
@@ -130,17 +126,16 @@ public class CollectController {
         Integer user_id = UserContext.getUser().getUid();
         String paper_id = map.get("paper_id");
         String label_name = map.get("label_name");
-        if(paper_id !=null) {
+        if (paper_id != null) {
             collectService.deleteLabel(user_id, paper_id, label_name);
             labelService.deleteLabel(user_id, label_name, true);
             return Result.ok("删除标签成功");
-        }
-        else {
+        } else {
             Collect collect = collectService.getById(user_id);
             List<CollectInfo> collectInfos = collect.getCollectInfos();
             collectInfos = new ObjectMapper().convertValue(collectInfos, new TypeReference<>() {
             });
-            for (CollectInfo collectInfo:collectInfos)
+            for (CollectInfo collectInfo : collectInfos)
                 collectInfo.getLabels().remove(label_name);
             collect.setCollectInfos(collectInfos);
             collectService.updateById(collect);

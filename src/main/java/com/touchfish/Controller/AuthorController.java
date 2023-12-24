@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,7 +62,15 @@ public class AuthorController {
         Author author = authorService.getById(author_id);
         if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
+        AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
+        if(authorPaper == null && paper_id != null)
+        {
+            authorPaperService.saveAuthorPaper(author_id, paper_id);
+            authorPaper = authorPaperService.getById(author_id);
+        }
+        if(authorPaper == null)
+            return Result.ok("查看学者门户成功", authorHome);
         for (String author_paper_id : authorPaper.getPapers()) {
             Paper paper = paperService.getById(author_paper_id);
             papers.add(paper);
@@ -109,7 +118,7 @@ public class AuthorController {
             if (author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
         }
-        AuthorHome authorHome = new AuthorHome(author, papers, returnCoAuthors);
+        authorHome = new AuthorHome(author, papers, returnCoAuthors);
         String s = JSONUtil.toJsonStr(authorHome);
         stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
         return Result.ok("查看学者门户成功", authorHome);
