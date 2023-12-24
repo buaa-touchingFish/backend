@@ -34,6 +34,7 @@ public class InstitutionController {
     @Autowired
     private AuthorImpl author;
 
+    @Autowired
     private AuthorPaperImpl authorPaperImpl;
 
     /** 通过id获取机构
