@@ -57,6 +57,10 @@ public class InstitutionController {
         if(members.getAuthor_ids() != null) {
             for (String eachAuthorId : members.getAuthor_ids()) {
                 Author targetAuthor = author.getBaseMapper().selectById(eachAuthorId);
+                if(targetAuthor == null){
+                    System.out.println("null author" + eachAuthorId);
+                    continue;
+                }
                 authorList.add(targetAuthor);
             }
         }
