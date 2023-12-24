@@ -57,7 +57,7 @@ public class CollectController {
             return Result.fail("已收藏");
     }
 
-    @DeleteMapping
+    @PostMapping("/delete")
     @LoginCheck
     @Operation(summary = "取消收藏", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\"")
@@ -122,7 +122,7 @@ public class CollectController {
         }
     }
 
-    @DeleteMapping("/label")
+    @PostMapping("/label/delete")
     @LoginCheck
     @Operation(summary = "删除标签", security = {@SecurityRequirement(name = "bearer-key")})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"paper_id\":\"文章id\", \"label_name\":\"标签名称\"")
