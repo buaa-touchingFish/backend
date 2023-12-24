@@ -1,7 +1,10 @@
 package com.touchfish.Controller;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.touchfish.Dto.HistoryInfo;
 import com.touchfish.Po.History;
+import com.touchfish.Po.Paper;
 import com.touchfish.Service.impl.HistoryImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.LoginCheck;
@@ -33,6 +36,9 @@ public class HistoryController {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private PaperImpl paperImpl;
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -70,10 +76,18 @@ public class HistoryController {
     @LoginCheck
     @Operation(summary = "获取当前用户浏览记录", security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "不需要")
-    public Result<List<History>> getHistoriesByUid(){
+    public Result<List<HistoryInfo>> getHistoriesByUid(){
+        List<HistoryInfo> ans = new ArrayList<>();
         List<History> historyList = history.lambdaQuery().eq(History::getUser_id,
                 UserContext.getUser().getUid()).list();
-        return Result.ok("查询用户浏览记录成功", historyList);
+        for (History history1:historyList){
+            HistoryInfo historyInfo = new HistoryInfo();
+            BeanUtil.copyProperties(history1,historyInfo);
+            Paper one = paperImpl.lambdaQuery().eq(Paper::getId, history1.getPaper_id()).one();
+            historyInfo.setPaper_name(one.getTitle());
+            ans.add(historyInfo);
+        }
+        return Result.ok("查询用户浏览记录成功", ans);
     }
 
     @GetMapping("/get/count")

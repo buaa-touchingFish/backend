@@ -70,6 +70,15 @@ public class UserController {
         return formatter.format(date);
     }
 
+    @GetMapping("/getInfo")
+    @LoginCheck
+    @Operation(summary = "获取个人信息",security = { @SecurityRequirement(name = "bearer-key") })
+    public  Result<UserInfo> getUserInfo(){
+        User myUser = UserContext.getUser();
+        User one = user.lambdaQuery().eq(User::getUid, myUser.getUid()).one();
+        UserInfo info = new UserInfo(one.getUsername(),one.getEmail(),one.getPhone(),one.getAvatar(),one.getUid(),one.getAuthor_id());
+        return Result.ok("成功获取个人信息",info);
+    }
 
     @PostMapping("/sendCaptcha")
     @Operation(summary = "发送验证码")
@@ -166,7 +175,7 @@ public class UserController {
 
     @PostMapping("/changepwd1")
     @LoginCheck
-    @Operation(summary = "找回密码",security = { @SecurityRequirement(name = "bearer-key") })
+    @Operation(summary = "修改密码",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"oldpwd\": ,\"newpwd:\"")
     public Result<String> changePwd1(@RequestBody Map<String,String> mp){
         String oldPwd = mp.get("oldpwd");
