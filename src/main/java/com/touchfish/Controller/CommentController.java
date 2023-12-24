@@ -6,6 +6,7 @@ import com.touchfish.Service.impl.CommentImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +34,7 @@ public class CommentController {
     public Result<String> save(@RequestBody Map<String, String> map) {
         String content = map.get("content");
         String paper_id = map.get("paper_id");
-        Integer sender_id = Integer.parseInt(map.get("sender_id"));
+        Integer sender_id = UserContext.getUser().getUid();
         LocalDateTime send_time = LocalDateTime.now();
         if (map.get("receiver_id") != null) {
             Integer receiver_id = Integer.parseInt(map.get("receiver_id"));

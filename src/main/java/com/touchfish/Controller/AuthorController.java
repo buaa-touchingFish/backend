@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorHome;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CoAuthor;
-import com.touchfish.Po.Author;
-import com.touchfish.Po.AuthorPaper;
-import com.touchfish.Po.Institution;
-import com.touchfish.Po.Paper;
+import com.touchfish.Po.*;
 import com.touchfish.Service.impl.*;
+import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -43,6 +43,8 @@ public class AuthorController {
     private InstitutionAuthorImpl institutionAuthorService;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private SubscribeImpl subscribeService;
 
     @GetMapping
     @Operation(summary = "获取学者门户")
@@ -125,5 +127,26 @@ public class AuthorController {
     @Operation(summary = "获取学者总数")
     public Result<Integer> getCount(){
         return Result.ok("成功返回",2325000);
+    }
+
+    @GetMapping("/subscribe")
+    @LoginCheck
+    @Operation(summary = "是否订阅", security = {@SecurityRequirement(name = "bearer-key")})
+    public Result<Boolean> getSubscribeStatus(String author_id)
+    {
+        User user = UserContext.getUser();
+        Subscribe subscribe = subscribeService.getById(user.getUid());
+        ArrayList<String> authorIds = subscribe.getAuthor_id();
+        authorIds = new ObjectMapper().convertValue(authorIds, new TypeReference<>() {
+        });
+        boolean flag = false;
+        for(String authorId:authorIds)
+        {
+            if(authorId.equals(author_id)){
+                flag = true;
+                break;
+            }
+        }
+        return Result.ok("查看订阅状态成功", flag);
     }
 }
