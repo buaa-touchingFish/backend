@@ -1,6 +1,7 @@
 package com.touchfish.Controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -181,11 +182,11 @@ public class UserController {
         String oldPwd = mp.get("oldpwd");
         String newPwd = mp.get("newpwd");
         User myUser = UserContext.getUser();
-        if (myUser.getPassword().equals(oldPwd)){
+        User newUser = user.lambdaQuery().eq(User::getUid,myUser.getUid()).one();
+        if (newUser.getPassword().equals(oldPwd)){
             myUser.setPassword(newPwd);
-            User byId = user.getById(myUser.getUid());
-            byId.setPassword(newPwd);
-            boolean flag = user.updateById(byId);
+            newUser.setPassword(newPwd);
+            boolean flag = user.updateById(newUser);
             if (flag) return Result.ok("修改密码成功");
             else return Result.fail("修改密码失败");
         }
@@ -285,6 +286,7 @@ public class UserController {
         if (!userInfo.getEmail().equals(myUser.getEmail())){
             myUser.setEmail(userInfo.getEmail());
         }
+        myUser.setAvatar(userInfo.getAvatar());
         boolean update = user.lambdaUpdate().eq(User::getUid, myUser.getUid()).update(myUser);
         if (update) return Result.ok("修改信息成功");
         else return Result.fail("修改信息失败");
