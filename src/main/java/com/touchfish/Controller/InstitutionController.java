@@ -66,6 +66,7 @@ public class InstitutionController {
         if (members.getAuthor_ids() != null) {
             for (String eachAuthorId : members.getAuthor_ids()) {
                 Author targetAuthor = author.getBaseMapper().selectById(eachAuthorId);
+
                 if (targetAuthor == null){
                     targetAuthor = (Author) OpenAlex.sendResponse("author",eachAuthorId);
                     author.saveOrUpdate(targetAuthor);

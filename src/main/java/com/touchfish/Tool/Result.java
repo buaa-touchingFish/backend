@@ -22,5 +22,5 @@ public class Result<R> {
         return new Result<T>(400,message,null);
     }
 
-    public static<T> Result<T> fail(String message,Integer code) {return  new Result<T>(code,message,null);}
+    public static<T> Result<T> fail(String message, Integer code) {return  new Result<T>(code,message,null);}
 }
