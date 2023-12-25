@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -83,6 +84,18 @@ public class UserController {
         }
         UserInfo info = new UserInfo(one.getUsername(),one.getEmail(),one.getPhone(),one.getAvatar(),one.getUid(),one.getAuthor_id(),author_name);
         return Result.ok("成功获取个人信息",info);
+    }
+
+    @PostMapping("/getava")
+    @Operation(summary = "获取个人头像" )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户id \"id\":")
+    public  Result<String> getUserAva(@RequestBody Map<String,Integer> mp){
+        Integer uid = mp.get("id");
+        User byId = user.getById(uid);
+        if (byId == null){
+            return Result.fail("用户不存在");
+        }
+        return Result.ok("成功获取头像",byId.getAvatar());
     }
 
     @PostMapping("/sendCaptcha")
