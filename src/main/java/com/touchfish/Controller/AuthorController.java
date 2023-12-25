@@ -60,6 +60,7 @@ public class AuthorController {
         Author author = authorService.getById(author_id);
         if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
+        System.out.println(author.getClaim_uid());
         AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
         if(authorPaper == null && paper_id != null)
@@ -70,6 +71,7 @@ public class AuthorController {
         if(authorPaper == null)
             return Result.ok("查看学者门户成功", authorHome);
         for (String author_paper_id : authorPaper.getPapers()) {
+            if(author_paper_id.equals(""))  continue;
             Paper paper = paperService.getById(author_paper_id);
             papers.add(paper);
             List<AuthorShip> authorships = paper.getAuthorships();
