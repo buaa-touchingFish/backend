@@ -1,5 +1,6 @@
 package com.touchfish.Tool;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.touchfish.Po.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,7 +34,7 @@ public class MethodHandler  implements HandlerInterceptor {
         if(null != logMethod){
             nolog = false;
             String jwt = request.getHeader("Authorization");
-            if (jwt == null) {
+            if (StrUtil.isEmpty(jwt)) {
                 flag = false;
             }else{
                 if (jwt.substring(0,6).equals("Bearer")){
