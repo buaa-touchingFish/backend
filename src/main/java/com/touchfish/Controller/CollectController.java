@@ -153,6 +153,7 @@ public class CollectController {
     public Result<Label> getLabels() {
         Integer user_id = UserContext.getUser().getUid();
         Label label = labelService.getById(user_id);
+        if(label == null)   label = new Label(user_id, new ArrayList<>());
         return Result.ok("获取标签列表成功", label);
     }
 }
