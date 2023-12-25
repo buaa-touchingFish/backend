@@ -18,6 +18,7 @@ public class History {
     private int view_times;
 
 
+
     public History(int user_id, String paper_id, String last_update_time) {
         this.user_id = user_id;
         this.paper_id = paper_id;

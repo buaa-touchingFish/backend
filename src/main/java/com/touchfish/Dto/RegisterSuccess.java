@@ -6,6 +6,10 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class RegisterSuccess {
-    String jwt;
-    Integer uid;
+    private String jwt;
+    private Integer uid;
+    private String username;
+    private String email;
+    private String phone;
+    private String avatar;
 }

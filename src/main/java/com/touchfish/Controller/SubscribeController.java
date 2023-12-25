@@ -9,6 +9,7 @@ import com.touchfish.Service.impl.SubscribeImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +36,9 @@ public class SubscribeController {
     @PostMapping
     @LoginCheck
     @Operation(summary = "订阅学者", security = {@SecurityRequirement(name = "bearer-key")})
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"author_id\":\"学者id\"")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"author_id\":\"学者id\"")
     public Result<String> save(@RequestBody Map<String, String> map) {
-        Integer user_id = Integer.parseInt(map.get("user_id"));
+        Integer user_id = UserContext.getUser().getUid();
         String author_id = map.get("author_id");
         if (subscribeService.saveSubscribe(user_id, author_id)) {
             SubscribeCnt subscribeCnt = subscribeCntService.getById(author_id);
@@ -52,12 +53,12 @@ public class SubscribeController {
             return Result.fail("已订阅");
     }
 
-    @DeleteMapping
+    @PostMapping("/delete")
     @LoginCheck
     @Operation(summary = "取消订阅", security = {@SecurityRequirement(name = "bearer-key")})
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\", \"author_id\":\"学者id\"")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"author_id\":\"学者id\"")
     public Result<String> delete(@RequestBody Map<String, String> map) {
-        Integer user_id = Integer.parseInt(map.get("user_id"));
+        Integer user_id = UserContext.getUser().getUid();
         String author_id = map.get("author_id");
         if (subscribeService.deleteSubscribe(user_id, author_id)) {
             SubscribeCnt subscribeCnt = subscribeCntService.getById(author_id);
@@ -71,13 +72,13 @@ public class SubscribeController {
     @GetMapping
     @LoginCheck
     @Operation(summary = "获取订阅列表", security = {@SecurityRequirement(name = "bearer-key")})
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"user_id\":\"用户id\"")
-    public Result<List<RetSubscribe>> getAuthorByUser(Integer user_id) {
+    public Result<List<RetSubscribe>> getAuthorByUser() {
+        Integer user_id = UserContext.getUser().getUid();
         List<String> subscribes = subscribeService.getSubscribes(user_id);
         List<RetSubscribe> list = new ArrayList<>();
         for (String author_id : subscribes) {
             Author author = authorService.getById(author_id);
-            String avatar = "s5usfv19s.hb-bkt.clouddn.com/v2-bf64744df8acc282dbb90c6ddfe8379c_r.jpg";
+            String avatar = "s5usfv19s.hb-bkt.clouddn.com/OIP-C.jpg";
             Integer claimUid = author.getClaim_uid();
             if (claimUid != null)
                 avatar = userService.getById(claimUid).getAvatar();

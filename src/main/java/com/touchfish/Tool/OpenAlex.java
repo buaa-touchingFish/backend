@@ -117,9 +117,13 @@ public class OpenAlex {
 //        id = "A5077915689";
 //        Author author = (Author) sendResponse(table, id);
 //        System.out.println(author);
-        table = "work";
-        id = "W100240748";
-        Paper paper = (Paper) sendResponse(table,id);
-        System.out.println(paper);
+//        table = "work";
+//        id = "W100240748";
+//        Paper paper = (Paper) sendResponse(table,id);
+//        System.out.println(paper);
+        table = "institution";
+        id = "I100005738";
+        Institution institution = (Institution) sendResponse(table, id);
+        System.out.println(institution);
     }
 }

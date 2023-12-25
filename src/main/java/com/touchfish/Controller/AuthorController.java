@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.touchfish.MiddleClass.AuthorHome;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.CoAuthor;
-import com.touchfish.Po.Author;
-import com.touchfish.Po.AuthorPaper;
-import com.touchfish.Po.Institution;
-import com.touchfish.Po.Paper;
+import com.touchfish.Po.*;
 import com.touchfish.Service.impl.*;
+import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -43,10 +43,11 @@ public class AuthorController {
     private InstitutionAuthorImpl institutionAuthorService;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private SubscribeImpl subscribeService;
 
     @GetMapping
     @Operation(summary = "获取学者门户")
-    //todo:coauthor拆出来
     public Result<AuthorHome> getAuthorHome(String author_id, String paper_id) {
         String id = stringRedisTemplate.opsForValue().get(RedisKey.AUTHOR_KEY + author_id);
         if (id != null) {
@@ -54,11 +55,20 @@ public class AuthorController {
             return Result.ok("查看学者门户成功", authorHome);
         }
         List<Paper> papers = new ArrayList<>();
+        HashMap<CoAuthor, String> map = new HashMap<>();        //coAuthor -> paper_id
         HashMap<CoAuthor, Integer> CoAuthors = new HashMap<>();
         Author author = authorService.getById(author_id);
         if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
+        AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
+        if(authorPaper == null && paper_id != null)
+        {
+            authorPaperService.saveAuthorPaper(author_id, paper_id);
+            authorPaper = authorPaperService.getById(author_id);
+        }
+        if(authorPaper == null)
+            return Result.ok("查看学者门户成功", authorHome);
         for (String author_paper_id : authorPaper.getPapers()) {
             Paper paper = paperService.getById(author_paper_id);
             papers.add(paper);
@@ -87,6 +97,7 @@ public class AuthorController {
                 if (!flag) {
                     coAuthor = new CoAuthor(ship_author.getId());
                     CoAuthors.put(coAuthor, 1);
+                    map.put(coAuthor, author_paper_id);
                 }
             }
         }
@@ -100,12 +111,12 @@ public class AuthorController {
         for (CoAuthor coAuthor : returnCoAuthors) {
             Author author1 = authorService.getById(coAuthor.getId());
             if (author1 == null)
-                author1 = getAuthorFromOpenAlex(coAuthor.getId(), null);
+                author1 = getAuthorFromOpenAlex(coAuthor.getId(), map.get(coAuthor));
             coAuthor.setDisplay_name(author1.getDisplay_name());
             if (author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
         }
-        AuthorHome authorHome = new AuthorHome(author, papers, returnCoAuthors);
+        authorHome = new AuthorHome(author, papers, returnCoAuthors);
         String s = JSONUtil.toJsonStr(authorHome);
         stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
         return Result.ok("查看学者门户成功", authorHome);
@@ -126,5 +137,26 @@ public class AuthorController {
     @Operation(summary = "获取学者总数")
     public Result<Integer> getCount(){
         return Result.ok("成功返回",2325000);
+    }
+
+    @GetMapping("/subscribe")
+    @LoginCheck
+    @Operation(summary = "是否订阅", security = {@SecurityRequirement(name = "bearer-key")})
+    public Result<Boolean> getSubscribeStatus(String author_id)
+    {
+        User user = UserContext.getUser();
+        Subscribe subscribe = subscribeService.getById(user.getUid());
+        ArrayList<String> authorIds = subscribe.getAuthor_id();
+        authorIds = new ObjectMapper().convertValue(authorIds, new TypeReference<>() {
+        });
+        boolean flag = false;
+        for(String authorId:authorIds)
+        {
+            if(authorId.equals(author_id)){
+                flag = true;
+                break;
+            }
+        }
+        return Result.ok("查看订阅状态成功", flag);
     }
 }

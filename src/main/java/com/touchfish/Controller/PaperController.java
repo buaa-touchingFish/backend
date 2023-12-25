@@ -2,36 +2,36 @@ package com.touchfish.Controller;
 
 
 import cn.hutool.json.JSONObject;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import cn.hutool.json.JSONArray;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.search.CompletionSuggest;
+import co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.qiniu.util.Json;
 import com.touchfish.Dao.ElasticSearchRepository;
-import com.touchfish.Dto.HotPaper;
-import com.touchfish.Dto.SearchInfo;
+import com.touchfish.Dto.*;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.touchfish.Dto.PaperInfo;
-import com.touchfish.MiddleClass.AuthorShip;
-import com.touchfish.MiddleClass.RefWork;
-import com.touchfish.MiddleClass.RelWork;
+import com.touchfish.MiddleClass.*;
 import com.touchfish.Po.*;
+import com.touchfish.Service.impl.*;
 import com.touchfish.Service.impl.PaperAppealImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.*;
-import com.touchfish.Service.impl.AuthorPaperImpl;
 import com.touchfish.Po.PaperDoc;
-import com.touchfish.Service.impl.CommentImpl;
 import com.touchfish.Service.impl.PaperImpl;
 import com.touchfish.Tool.RedisKey;
 import com.touchfish.Tool.Result;
@@ -60,6 +60,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
@@ -92,9 +93,94 @@ public class PaperController {
     private PaperImpl paperImpl;
     @Autowired
     private PaperAppealImpl paperAppeal;
+    private static Map<String,String>lanMap=new HashMap<>();
+    {
+        lanMap.put("en", "英语");
+        lanMap.put("de", "德语");
+        lanMap.put("fr", "法语");
+        lanMap.put("", "未知");
+        lanMap.put("es", "西班牙语");
+        lanMap.put("pt", "葡萄牙语");
+        lanMap.put("zh-cn", "简体中文");
+        lanMap.put("it", "意大利语");
+        lanMap.put("ja", "日语");
+        lanMap.put("tr", "土耳其语");
+        lanMap.put("id", "印度尼西亚语");
+        lanMap.put("ca", "加泰罗尼亚语");
+        lanMap.put("ko", "韩语");
+        lanMap.put("ru", "俄语");
+        lanMap.put("nl", "荷兰语");
+        lanMap.put("pl", "波兰语");
+        lanMap.put("ro", "罗马尼亚语");
+        lanMap.put("vi", "越南语");
+        lanMap.put("no", "挪威语");
+        lanMap.put("da", "丹麦语");
+        lanMap.put("af", "南非荷兰语");
+        lanMap.put("tl", "菲律宾语");
+        lanMap.put("hu", "匈牙利语");
+        lanMap.put("cs", "捷克语");
+        lanMap.put("sv", "瑞典语");
+        lanMap.put("uk", "乌克兰语");
+        lanMap.put("fa", "波斯语");
+        lanMap.put("hr", "克罗地亚语");
+        lanMap.put("lt", "立陶宛语");
+        lanMap.put("ar", "阿拉伯语");
+        lanMap.put("so", "索马里语");
+        lanMap.put("et", "爱沙尼亚语");
+        lanMap.put("el", "希腊语");
+        lanMap.put("cy", "威尔士语");
+        lanMap.put("sl", "斯洛文尼亚语");
+        lanMap.put("fi", "芬兰语");
+        lanMap.put("sk", "斯洛伐克语");
+        lanMap.put("sw", "斯瓦希里语");
+        lanMap.put("lv", "拉脱维亚语");
+        lanMap.put("sq", "阿尔巴尼亚语");
+        lanMap.put("bg", "保加利亚语");
+        lanMap.put("mk", "马其顿语");
+        lanMap.put("th", "泰语");
+        lanMap.put("zh-tw", "繁体中文");
+        lanMap.put("he", "希伯来语");
+        lanMap.put("null", "空值");
+        lanMap.put("bn", "孟加拉语");
+        lanMap.put("hi", "印地语");
+        lanMap.put("mr", "马拉地语");
+        lanMap.put("ur", "乌尔都语");
+        lanMap.put("ne", "尼泊尔语");
+        lanMap.put("ta", "泰米尔语");
+        lanMap.put("article", "文章");
+        lanMap.put("book-chapter", "书籍章节");
+        lanMap.put("book", "书籍");
+        lanMap.put("dataset", "数据集");
+        lanMap.put("other", "其他");
+        lanMap.put("report", "报告");
+        lanMap.put("reference-entry", "参考条目");
+        lanMap.put("dissertation", "学位论文");
+        lanMap.put("editorial", "社论");
+        lanMap.put("erratum", "勘误");
+        lanMap.put("paratext", "副文本");
+        lanMap.put("letter", "信函");
+        lanMap.put("standard", "标准");
+        lanMap.put("peer-review", "同行评审");
+        lanMap.put("grant", "基金");
+        lanMap.put("book-series", "书籍系列");
 
+    }
+    private String getKey(String value){
+        for (Map.Entry<String, String> entry : lanMap.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                String matchedKey = entry.getKey();
+                return matchedKey;
+                // 如果需要，将匹配的键存储在 matchedKeys 列表中
+                // matchedKeys.add(matchedKey);
+            }
+        }
+        return "";
+    }
+    private static Map<String,String>typeMap=new HashMap<>();
+    private static Map<String,String>dateMap=new HashMap<>();
     @Autowired
     private AuthorPaperImpl authorPaperImpl;
+    private CountRequest.Builder c;
 
     public static ElasticsearchClient createClient() {
         String serverUrl = "http://121.36.81.4:9200";
@@ -115,13 +201,17 @@ public class PaperController {
         // And create the API client
         return new ElasticsearchClient(transport);
     }
-
+    /*private String translateDate(String date) {
+    }*/
     private final ElasticsearchClient client = createClient();
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     private ZsetRedis zsetRedis;
+
+    @Autowired
+    private CollectImpl collectImpl;
     /*@GetMapping("/id")
     public Result<PaperDoc>getWork(){
         System.out.println(es.findById("W2029916517"));
@@ -135,33 +225,57 @@ public class PaperController {
     }
 
     @PostMapping ("/single")
-    @Operation(summary = "点击获取单个文献")
+    @LoginCheck
+    @Operation(summary = "点击获取单个文献",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
+        User myUser = UserContext.getUser();
+        ObjectMapper mapper = new ObjectMapper();
         ThreadUtil.execute(()->{
-            stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
-            zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
-            zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
-
+            if (paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).exists()){
+                stringRedisTemplate.opsForValue().increment(RedisKey.SUM_LOOK_KEY,1);
+                zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),json.get("id"),1.0);
+                zsetRedis.setTTL(RedisKey.BROWSE_CNT_KEY+RedisKey.getEveryDayKey(),2l,TimeUnit.DAYS);
+            }
         });
         Integer browse = zsetRedis.incrementScore(RedisKey.BROWSE_CNT_KEY, json.get("id"), 1.0);
         String id1 = stringRedisTemplate.opsForValue().get(RedisKey.PAPER_KEY+json.get("id"));
         if (id1 != null){
             PaperInfo paperInfo = JSONUtil.toBean(id1, PaperInfo.class);
+            if (paperInfo.is_active == false){
+                return Result.fail("该文章已被下架");
+            }
             paperInfo.setBrowse(browse);
             paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
             paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
+            Collect byId = collectImpl.getById(myUser.getUid());
+            if (byId != null){
+                List<CollectInfo> collectInfos = byId.getCollectInfos();
+                List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
+                for (CollectInfo collectInfo:collectInfoList){
+                    if (collectInfo.getPaper_id().equals(json.get("id"))){
+                        paperInfo.setCollected(true);
+                        break;
+                    }
+                }
+            }
             return Result.ok("成功返回",paperInfo);
         }
-        Paper paper = paperImpl.lambdaQuery().eq(Paper::getId, json.get("id")).one();
-        ObjectMapper mapper = new ObjectMapper();
+        Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
+        if (paper.getIs_active() == false){
+            return Result.fail("该文章已被下架");
+        }
         List<AuthorShip> authorships = paper.getAuthorships();
         List<AuthorShip> authorShipList = mapper.convertValue(authorships, new TypeReference<>() {
         });
         List<String> referenced_works = paper.getReferenced_works();
         List<String> related_works = paper.getRelated_works();
 
+        Collect byId = collectImpl.getById(myUser.getUid());
+
+
         PaperInfo paperInfo = new PaperInfo();
+        paperInfo.setOa_url(paper.getOa_url());
         paperInfo.setAbstract(paper.getAbstract());
         paperInfo.setIssn(paper.getIssn());
         paperInfo.setDoi(paper.getDoi());
@@ -179,9 +293,18 @@ public class PaperController {
         paperInfo.setBrowse(browse);
         paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
         paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
-
-        ThreadUtil.execute(() -> {
-            for (String id : referenced_works) {
+        if (byId != null){
+            List<CollectInfo> collectInfos = byId.getCollectInfos();
+            List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
+            for (CollectInfo collectInfo:collectInfoList){
+                if (collectInfo.getPaper_id().equals(json.get("id"))){
+                    paperInfo.setCollected(true);
+                    break;
+                }
+            }
+        }
+        ThreadUtil.execute(()->{
+            for (String id:referenced_works){
                 Paper one = paperImpl.getPaperByAlex(id);
                 paperImpl.saveOrUpdate(one);
                 List<AuthorShip> authorShipList1 = one.getAuthorships();
@@ -223,7 +346,42 @@ public class PaperController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",\"keyword\":\"内容相关（title、abstract、keyword）\",\"author\":\"作者姓名\",\"publisher\":\"刊物\",\"institution\":\"机构\"")
     public Result<List<Paper>> searchKeyword(@RequestBody SearchInfo searchInfo) {
         final int pageNum = Math.max(searchInfo.getPageNum(), 0);
-        String keyword = searchInfo.getKeyword();
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
+        }
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
+            }
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        Query query=getQuery(searchText,searchField);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum*10).query(query),PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
+        /*String keyword = searchInfo.getKeyword();
         String author = searchInfo.getAuthor();
         String institution = searchInfo.getInstitution();
         String publisher = searchInfo.getPublisher();
@@ -247,41 +405,9 @@ public class PaperController {
         for (PaperDoc paperDoc : page) {
             papers.add(new Paper(paperDoc));
         }
-        /*if(pageNum==0){
-            try{
-                co.elastic.clients.elasticsearch._types.query_dsl.Query query1 = MatchQuery.of(m -> m
-                        .field(searchField)
-                        .query(searchText)
-                )._toQuery();
-                SearchResponse<Void> searchresponse = client.search(b -> b
-                                .index("papers")
-                                .size(0)
-                                .query(query1)
-                                .aggregations("lan", a -> a
-                                        .terms(ta -> ta.field("lan"))
-                                )
-                                .aggregations("type",a->a.terms(ta -> ta.field("type")))
-                                .aggregations("publisher",a->a.terms(ta -> ta.field("publisher")))
-                                .aggregations("date",a->a.terms(ta -> ta.field("publication_date"))),
-                        Void.class
-                );
-                List<StringTermsBucket> lan = searchresponse.aggregations()
-                        .get("lan").sterms().buckets().array();
-                List<StringTermsBucket>type=searchresponse.aggregations().get("type").sterms().buckets().array();
-                List<StringTermsBucket>publisherBucket=searchresponse.aggregations().get("publisher").sterms().buckets().array();
-                List<LongTermsBucket>date=searchresponse.aggregations().get("date").lterms().buckets().array();
-                for (StringTermsBucket bucket : lan) {
-                    System.out.println(bucket.docCount() + " " + bucket.key()._get().toString());
-                }
-            }
-            catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-*/
         String result = JSONUtil.toJsonStr(papers);
         stringRedisTemplate.opsForValue().set(RedisKey.SEARCH_KEY + searchInfo, result, 1, TimeUnit.DAYS);
-        return Result.ok("查询成功", papers);
+        return Result.ok("查询成功", papers);*/
     }
 
     @PostMapping("/aggregate")
@@ -338,7 +464,7 @@ public class PaperController {
                                                         to(FieldDateMath.of(f -> f.expr("now")))))),
                         Void.class
                 );
-                long count = client.count(c -> c.query(query)).count();
+                long count = client.count(c -> c.index("papers").query(query)).count();
                 List<StringTermsBucket> lan = searchresponse.aggregations()
                         .get("lan").sterms().buckets().array();
                 List<StringTermsBucket> type = searchresponse.aggregations().get("type").sterms().buckets().array();
@@ -346,22 +472,41 @@ public class PaperController {
                 List<RangeBucket> date = searchresponse.aggregations().get("date").dateRange().buckets().array();
                 JSONObject combined=new JSONObject();
                 combined.put("sum",count);
-                combined.put("lan",new JSONObject());
-                combined.put("type",new JSONObject());
-                combined.put("publisher",new JSONObject());
-                combined.put("date",new JSONObject());
+                List<AggregateInfo>laninfo=new ArrayList<>();
+                List<AggregateInfo>typeinfo=new ArrayList<>();
+                List<AggregateInfo>publisherinfo=new ArrayList<>();
+                List<AggregateInfo>dateinfo=new ArrayList<>();
                 for (StringTermsBucket bucket : lan) {
-                    ((JSONObject)combined.get("lan")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("lan")).put(bucket.key()._get().toString(),bucket.docCount());
+                    if(bucket.key()._get().toString().equals("")||bucket.key()._get().toString().equals("null"))
+                    {
+                        ;
+                    }
+                    else
+                        laninfo.add(new AggregateInfo(lanMap.get(bucket.key()._get().toString()),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : type) {
-                    ((JSONObject)combined.get("type")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("type")).put(bucket.key()._get().toString(),bucket.docCount());
+                    typeinfo.add(new AggregateInfo(lanMap.get(bucket.key()._get().toString()),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : publisherBucket) {
-                    ((JSONObject)combined.get("publisher")).put(bucket.key()._get().toString(),bucket.docCount());
+                    //((JSONObject)combined.get("publisher")).put(bucket.key()._get().toString(),bucket.docCount());
+                    if(bucket.key()._get().toString().equals("null"))
+                        continue;
+                    DisplayInfo publisher=JSONUtil.toBean(bucket.key()._get().toString(),DisplayInfo.class);
+                    publisherinfo.add(new AggregateInfo(bucket.docCount(),publisher));
                 }
                 for (RangeBucket bucket : date) {
-                    ((JSONObject)combined.get("date")).put(bucket.toAsString(), bucket.docCount());
+                    //((JSONObject)combined.get("date")).put(bucket.toAsString(), bucket.docCount());
+                    if(bucket.toAsString().toString().contains("2023-12"))
+                        dateinfo.add(new AggregateInfo("2023年至今",bucket.docCount()));
+                    else
+                        dateinfo.add(new AggregateInfo(bucket.toAsString(),bucket.docCount()));
                 }
+                combined.put("lan",laninfo);
+                combined.put("type",typeinfo);
+                combined.put("publisher",publisherinfo);
+                combined.put("date",dateinfo);
                 return Result.ok("",combined);
             } catch (Exception e) {
                 return Result.fail(e.toString());
@@ -378,7 +523,7 @@ public class PaperController {
         final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
         final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
-        String toDate=searchInfo.getTo_date().equals("")? null : searchInfo.getTo_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
             searchField.add("information");
             searchText.add(searchInfo.getKeyword());
@@ -402,7 +547,7 @@ public class PaperController {
         }
         if(!searchInfo.getType().equals("")){
             searchField.add("type");
-            searchText.add(searchInfo.getType());
+            searchText.add(getKey(searchInfo.getType()));
         }
         if(!searchInfo.getIssn().equals("")){
             searchField.add("issn");
@@ -410,19 +555,12 @@ public class PaperController {
         }
         if(!searchInfo.getLanguage().equals("")){
             searchField.add("lan");
-            searchText.add(searchInfo.getLanguage());
+            searchText.add(getKey(searchInfo.getLanguage()));
         }
         Query query=getQuery(searchText,searchField,fromDate,toDate);
 
         try {
-           /* SearchResponse<PaperDoc>searchResponse;
-                searchResponse = client.search(builder -> builder
-                                .index("papers")
-                                .size(10)
-                                .from(pageNum).
-                                query(query)
-                        , PaperDoc.class);*/
-            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum*10).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
             for(Hit<PaperDoc>hit:response.hits().hits()){
                 papers.add(new Paper(hit.source()));
@@ -433,53 +571,150 @@ public class PaperController {
             e.printStackTrace();
             return Result.ok("");
         }
-        /*Query query = NativeQuery.builder()
-                .withAggregation("publisher", Aggregation.of(a -> a
-                        .terms(ta -> ta.field("lan"))))
-                .withQuery(q -> q
-                        .match(m -> m
-                                .field("information")
-                                .query("computer")
-                        )
-                )
-                //.withPageable(pageable)
-                .build();*/
-        //ElasticsearchTemplate elasticsearchTemplate1=new ElasticsearchTemplate();
-        //elasticsearchTemplate1.search();
-        /*SearchHits<PaperDoc> paperDocSearchHits = elasticsearchTemplate.search(query, PaperDoc.class);
-        System.out.println(paperDocSearchHits);*/
-        //long a = elasticsearchOperations.count(query,PaperDoc.class);
-        /*for(SearchHit<PaperDoc>paper:searchHits){
-            System.out.println(paper.getContent());
+    }
+    @PostMapping("/timeSearch")
+    @Operation(summary = "搜索时间排序")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",剩下的见类中定义")
+    public Result<List<Paper>> timeSearch(@RequestBody SearchInfo searchInfo) {
+        final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
         }
-        system.out.println(a);
-        /*try {
-
-            String searchText = "computer";
-
-            co.elastic.clients.elasticsearch._types.query_dsl.Query query1 = MatchQuery.of(m -> m
-                    .field("information")
-                    .query(searchText)
-            )._toQuery();
-            SearchResponse<Void> searchresponse = client.search(b -> b
-                            .index("papers")
-                            .size(0)
-                            .query(query1)
-                            .aggregations("publisher", a -> a
-                                    .terms(ta -> ta.field("lan"))
-                            ),
-                    Void.class
-            );
-            List<StringTermsBucket> buckets = searchresponse.aggregations()
-                    .get("publisher").sterms().buckets().array();
-
-            for (StringTermsBucket bucket : buckets) {
-                System.out.println(bucket.docCount() + " " + bucket.key()._get().toString());
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
             }
-        } catch (Exception e) {
-            System.out.println(e);
-        }*/
-        //return Result.ok("");
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        if(!searchInfo.getType().equals("")){
+            searchField.add("type");
+            searchText.add(getKey(searchInfo.getType()));
+        }
+        if(!searchInfo.getIssn().equals("")){
+            searchField.add("issn");
+            searchText.add(searchInfo.getIssn());
+        }
+        if(!searchInfo.getLanguage().equals("")){
+            searchField.add("lan");
+            searchText.add(getKey(searchInfo.getLanguage()));
+        }
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder
+                    .index("papers")
+                    .size(10)
+                    .from(pageNum*10)
+                    .query(query)
+                    .sort(s->s
+                            .field(f->f
+                                    .field("publication_date").order(SortOrder.Desc))),
+                    PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
+    }
+    @PostMapping("/citeSearch")
+    @Operation(summary = "被引用量排序")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"pageNum\":\"页数\",剩下的见类中定义")
+    public Result<List<Paper>> citeSearch(@RequestBody SearchInfo searchInfo) {
+        final Integer pageNum = Math.max(searchInfo.getPageNum(), 0);
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
+        }
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
+            }
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        if(!searchInfo.getType().equals("")){
+            searchField.add("type");
+            searchText.add(getKey(searchInfo.getType()));
+        }
+        if(!searchInfo.getIssn().equals("")){
+            searchField.add("issn");
+            searchText.add(searchInfo.getIssn());
+        }
+        if(!searchInfo.getLanguage().equals("")){
+            searchField.add("lan");
+            searchText.add(getKey(searchInfo.getLanguage()));
+        }
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+        try {
+            SearchResponse<PaperDoc>response=client.search(builder -> builder
+                            .index("papers")
+                            .size(10)
+                            .from(pageNum*10)
+                            .query(query)
+                            .sort(s->s
+                                    .field(f->f
+                                            .field("cited_by_count").order(SortOrder.Desc))),
+                    PaperDoc.class);
+            List<Paper> papers=new ArrayList<>();
+            for(Hit<PaperDoc>hit:response.hits().hits()){
+                papers.add(new Paper(hit.source()));
+            }
+            return Result.ok("查询成功",papers);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return Result.ok("");
+        }
+    }
+    @PostMapping("/suggest")
+    @Operation(summary = "获取搜索推荐")
+    private Result<List<String>> getSuggestions(@RequestBody SuggestInfo suggestInfo){
+        try {
+            List<String>list = new ArrayList<String>();
+            String query = suggestInfo.getQuery();
+            SearchResponse<Void> searchResponse=client.search(c->c.index("works").size(5).suggest(s->s.suggesters("mysuggest",s1->s1.prefix(query).completion(co->co.field("suggestInform")))),Void.class);
+            Collection<List<Suggestion<Void>>> completionSuggestOptions=searchResponse.suggest().values();
+            List<Suggestion<Void>> suggestions=completionSuggestOptions.stream().toList().get(0);
+            Suggestion<Void> suggestion=suggestions.get(0)._get()._toSuggestion();
+            for(CompletionSuggestOption<Void> option:((CompletionSuggest<Void>)suggestion._get()).options())
+                list.add(option.text());
+            return Result.ok("",list);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Result.ok("");
+        }
     }
     private Query getQuery(List<String> searchText, List<String> searchField) {
         List<Query>queryList=new ArrayList<>();
@@ -631,8 +866,34 @@ public class PaperController {
         Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet().reverseRangeWithScores(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(), 0, 9);
         for (var a:typedTuples){
             Paper one = paperImpl.lambdaQuery().eq(Paper::getId, a.getValue()).one();
-            ans.add(new HotPaper(a.getValue(),one.getTitle()));
+            ans.add(new HotPaper(a.getValue(),one.getTitle(),zsetRedis.getScore(RedisKey.BROWSE_CNT_KEY + RedisKey.getEveryDayKey(),one.getId())));
         }
         return Result.ok("成功获取",ans);
+    }
+
+    @PostMapping("/getcitation")
+    @Operation(summary = "获取文献引用")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "格式:\"id\":")
+    public Result<String>  getCite(@RequestBody Map<String,String> mp){
+        Paper one = paperImpl.lambdaQuery().eq(Paper::getId,mp.get("id")).one();
+        ObjectMapper objectMapper = new ObjectMapper();
+        StringBuilder s = new StringBuilder();
+        if (one.getAuthorships().size()>0){
+            List<AuthorShip> authorships = one.getAuthorships();
+            List<AuthorShip> authorShipList = objectMapper.convertValue(authorships, new TypeReference<>() {
+            });
+            AuthorShip authorShip = authorShipList.get(0);
+            String[] s1 = authorShip.getAuthor().getDisplay_name().split(" ");
+            s.append(s1[0]);
+            if (s1.length>1){
+                s.append(",").append(Character.toUpperCase(s1[1].charAt(0))).append(".");
+            }
+        }
+        String s1 = one.getPublication_date().split("-")[0];
+        s.append("("+s1+").").append(one.getTitle()).append(".");
+        if (one.getPublisher() != null){
+            s.append(one.getPublisher().display_name);
+        }
+        return Result.ok("成功返回",s.toString());
     }
 }

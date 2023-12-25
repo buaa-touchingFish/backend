@@ -6,6 +6,7 @@ import com.touchfish.Service.impl.CommentImpl;
 import com.touchfish.Service.impl.UserImpl;
 import com.touchfish.Tool.LoginCheck;
 import com.touchfish.Tool.Result;
+import com.touchfish.Tool.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +34,7 @@ public class CommentController {
     public Result<String> save(@RequestBody Map<String, String> map) {
         String content = map.get("content");
         String paper_id = map.get("paper_id");
-        Integer sender_id = Integer.parseInt(map.get("sender_id"));
+        Integer sender_id = UserContext.getUser().getUid();
         LocalDateTime send_time = LocalDateTime.now();
         if (map.get("receiver_id") != null) {
             Integer receiver_id = Integer.parseInt(map.get("receiver_id"));
@@ -51,7 +52,8 @@ public class CommentController {
         List<Comment> list = commentService.lambdaQuery().eq(Comment::getPaper_id, paper_id).list();
         for(Comment comment:list)
         {
-            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id());
+            String ava = userService.getById(comment.getSender_id()).getAvatar();
+            RetComment retComment = new RetComment(comment.getId(), comment.getContent(), comment.getPaper_id(), comment.getSender_id(), userService.getById(comment.getSender_id()).getUsername(), comment.getSend_time(), comment.getReceiver_id(),ava);
             retComments.add(retComment);
         }
         return Result.ok("获取评论列表成功", retComments);
