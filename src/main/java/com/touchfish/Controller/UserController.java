@@ -128,8 +128,11 @@ public class UserController {
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
 
         stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
-
-        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar(),myUser.getAuthor_id()));
+        String author_name = null;
+        if (!StrUtil.isEmpty(myUser.getAuthor_id())){
+            author_name = authorImpl.getById(myUser.getAuthor_id()).getDisplay_name();
+        }
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar(),myUser.getAuthor_id(),author_name));
 
     }
 
