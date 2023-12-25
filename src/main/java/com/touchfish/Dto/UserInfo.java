@@ -14,4 +14,5 @@ public class UserInfo {
     private String avatar;
     private Integer uid;
     private String author_id;
+    private String author_name;
 }

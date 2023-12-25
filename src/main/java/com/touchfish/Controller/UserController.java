@@ -77,7 +77,11 @@ public class UserController {
     public  Result<UserInfo> getUserInfo(){
         User myUser = UserContext.getUser();
         User one = user.lambdaQuery().eq(User::getUid, myUser.getUid()).one();
-        UserInfo info = new UserInfo(one.getUsername(),one.getEmail(),one.getPhone(),one.getAvatar(),one.getUid(),one.getAuthor_id());
+        String author_name = null;
+        if (!StrUtil.isEmpty(one.getAuthor_id())){
+            author_name = authorImpl.getById(one.getAuthor_id()).getDisplay_name();
+        }
+        UserInfo info = new UserInfo(one.getUsername(),one.getEmail(),one.getPhone(),one.getAvatar(),one.getUid(),one.getAuthor_id(),author_name);
         return Result.ok("成功获取个人信息",info);
     }
 
@@ -128,11 +132,8 @@ public class UserController {
         stringRedisTemplate.opsForValue().set(RedisKey.JWT_KEY+myUser.getUsername(),jsonstr,1,TimeUnit.DAYS);//1天过期
 
         stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
-        String author_name = null;
-        if (!StrUtil.isEmpty(myUser.getAuthor_id())){
-            author_name = authorImpl.getById(myUser.getAuthor_id()).getDisplay_name();
-        }
-        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar(),myUser.getAuthor_id(),author_name));
+
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar(),myUser.getAuthor_id()));
 
     }
 

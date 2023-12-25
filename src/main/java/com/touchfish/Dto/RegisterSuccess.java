@@ -13,5 +13,4 @@ public class RegisterSuccess {
     private String phone;
     private String avatar;
     private String  author_id;
-    private String author_name;
 }
