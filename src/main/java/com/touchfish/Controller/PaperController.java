@@ -319,6 +319,25 @@ public class PaperController {
         return Result.ok("成功返回",paperInfo);
     }
 
+    @PostMapping("/geturl")
+    @Operation(summary = "获取文章的链接")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "paper的id \"id\":")
+    public Result<String> geturl(@RequestBody Map<String,String> mp) {
+        Paper paper1 = paperImpl.getById(mp.get("id"));
+        if (paper1 == null){
+            return  Result.fail("文章不存在");
+        }else{
+            String url = null;
+            if (paper1.getOa_url()!=null){
+                url = paper1.getOa_url();
+            }else if (paper1.getDoi() != null){
+                url = paper1.getDoi();
+            }
+            return Result.ok("成功返回",url);
+        }
+    }
+
+
     @PostMapping("/iscollect")
     @LoginCheck
     @Operation(summary = "是否被收藏",security = { @SecurityRequirement(name = "bearer-key") })

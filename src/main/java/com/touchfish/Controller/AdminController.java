@@ -2,6 +2,7 @@ package com.touchfish.Controller;
 
 import cn.hutool.json.JSONUtil;
 import com.touchfish.Dto.*;
+import com.touchfish.MiddleClass.AuthorHome;
 import com.touchfish.Po.*;
 import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.LoginCheck;
@@ -108,7 +109,13 @@ public class AdminController {
                     getTimeNow(),
                     targetUser.getUid(),
                     false));
-
+            String id = stringRedisTemplate.opsForValue().get(RedisKey.AUTHOR_KEY + targetAuthor.getId());
+            if (id != null) {
+                AuthorHome authorHome = JSONUtil.toBean(id, AuthorHome.class);
+                authorHome.getAuthor().setClaim_uid(targetUser.getUid());
+                String json = JSONUtil.toJsonStr(authorHome);
+                stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY,json);
+            }
         }
 
         else {
