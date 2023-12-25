@@ -25,10 +25,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.touchfish.MiddleClass.AuthorShip;
-import com.touchfish.MiddleClass.CollectInfo;
-import com.touchfish.MiddleClass.RefWork;
-import com.touchfish.MiddleClass.RelWork;
+import com.touchfish.MiddleClass.*;
 import com.touchfish.Po.*;
 import com.touchfish.Service.impl.*;
 import com.touchfish.Service.impl.PaperAppealImpl;
@@ -96,7 +93,91 @@ public class PaperController {
     private PaperImpl paperImpl;
     @Autowired
     private PaperAppealImpl paperAppeal;
+    private static Map<String,String>lanMap=new HashMap<>();
+    {
+        lanMap.put("en", "英语");
+        lanMap.put("de", "德语");
+        lanMap.put("fr", "法语");
+        lanMap.put("", "未知");
+        lanMap.put("es", "西班牙语");
+        lanMap.put("pt", "葡萄牙语");
+        lanMap.put("zh-cn", "简体中文");
+        lanMap.put("it", "意大利语");
+        lanMap.put("ja", "日语");
+        lanMap.put("tr", "土耳其语");
+        lanMap.put("id", "印度尼西亚语");
+        lanMap.put("ca", "加泰罗尼亚语");
+        lanMap.put("ko", "韩语");
+        lanMap.put("ru", "俄语");
+        lanMap.put("nl", "荷兰语");
+        lanMap.put("pl", "波兰语");
+        lanMap.put("ro", "罗马尼亚语");
+        lanMap.put("vi", "越南语");
+        lanMap.put("no", "挪威语");
+        lanMap.put("da", "丹麦语");
+        lanMap.put("af", "南非荷兰语");
+        lanMap.put("tl", "菲律宾语");
+        lanMap.put("hu", "匈牙利语");
+        lanMap.put("cs", "捷克语");
+        lanMap.put("sv", "瑞典语");
+        lanMap.put("uk", "乌克兰语");
+        lanMap.put("fa", "波斯语");
+        lanMap.put("hr", "克罗地亚语");
+        lanMap.put("lt", "立陶宛语");
+        lanMap.put("ar", "阿拉伯语");
+        lanMap.put("so", "索马里语");
+        lanMap.put("et", "爱沙尼亚语");
+        lanMap.put("el", "希腊语");
+        lanMap.put("cy", "威尔士语");
+        lanMap.put("sl", "斯洛文尼亚语");
+        lanMap.put("fi", "芬兰语");
+        lanMap.put("sk", "斯洛伐克语");
+        lanMap.put("sw", "斯瓦希里语");
+        lanMap.put("lv", "拉脱维亚语");
+        lanMap.put("sq", "阿尔巴尼亚语");
+        lanMap.put("bg", "保加利亚语");
+        lanMap.put("mk", "马其顿语");
+        lanMap.put("th", "泰语");
+        lanMap.put("zh-tw", "繁体中文");
+        lanMap.put("he", "希伯来语");
+        lanMap.put("null", "空值");
+        lanMap.put("bn", "孟加拉语");
+        lanMap.put("hi", "印地语");
+        lanMap.put("mr", "马拉地语");
+        lanMap.put("ur", "乌尔都语");
+        lanMap.put("ne", "尼泊尔语");
+        lanMap.put("ta", "泰米尔语");
+        lanMap.put("article", "文章");
+        lanMap.put("book-chapter", "书籍章节");
+        lanMap.put("book", "书籍");
+        lanMap.put("dataset", "数据集");
+        lanMap.put("other", "其他");
+        lanMap.put("report", "报告");
+        lanMap.put("reference-entry", "参考条目");
+        lanMap.put("dissertation", "学位论文");
+        lanMap.put("editorial", "社论");
+        lanMap.put("erratum", "勘误");
+        lanMap.put("paratext", "副文本");
+        lanMap.put("letter", "信函");
+        lanMap.put("standard", "标准");
+        lanMap.put("peer-review", "同行评审");
+        lanMap.put("grant", "基金");
+        lanMap.put("book-series", "书籍系列");
 
+    }
+    private String getKey(String value){
+        for (Map.Entry<String, String> entry : lanMap.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                String matchedKey = entry.getKey();
+                return matchedKey;
+                // 如果需要，将匹配的键存储在 matchedKeys 列表中
+                // matchedKeys.add(matchedKey);
+            }
+        }
+        return "";
+    }
+    private static Map<String,String>typeMap=new HashMap<>();
+    private static Map<String,String>dateMap=new HashMap<>();
     @Autowired
     private AuthorPaperImpl authorPaperImpl;
     private CountRequest.Builder c;
@@ -120,7 +201,8 @@ public class PaperController {
         // And create the API client
         return new ElasticsearchClient(transport);
     }
-
+    /*private String translateDate(String date) {
+    }*/
     private final ElasticsearchClient client = createClient();
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -395,19 +477,30 @@ public class PaperController {
                 List<AggregateInfo>dateinfo=new ArrayList<>();
                 for (StringTermsBucket bucket : lan) {
                     //((JSONObject)combined.get("lan")).put(bucket.key()._get().toString(),bucket.docCount());
-                    laninfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
+                    if(bucket.key()._get().toString().equals("")||bucket.key()._get().toString().equals("null"))
+                    {
+                        ;
+                    }
+                    else
+                        laninfo.add(new AggregateInfo(lanMap.get(bucket.key()._get().toString()),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : type) {
                     //((JSONObject)combined.get("type")).put(bucket.key()._get().toString(),bucket.docCount());
-                    typeinfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
+                    typeinfo.add(new AggregateInfo(lanMap.get(bucket.key()._get().toString()),bucket.docCount()));
                 }
                 for (StringTermsBucket bucket : publisherBucket) {
                     //((JSONObject)combined.get("publisher")).put(bucket.key()._get().toString(),bucket.docCount());
-                    publisherinfo.add(new AggregateInfo(bucket.key()._get().toString(),bucket.docCount()));
+                    if(bucket.key()._get().toString().equals("null"))
+                        continue;
+                    DisplayInfo publisher=JSONUtil.toBean(bucket.key()._get().toString(),DisplayInfo.class);
+                    publisherinfo.add(new AggregateInfo(bucket.docCount(),publisher));
                 }
                 for (RangeBucket bucket : date) {
                     //((JSONObject)combined.get("date")).put(bucket.toAsString(), bucket.docCount());
-                    dateinfo.add(new AggregateInfo(bucket.toAsString(),bucket.docCount()));
+                    if(bucket.toAsString().toString().contains("2023-12"))
+                        dateinfo.add(new AggregateInfo("2023年至今",bucket.docCount()));
+                    else
+                        dateinfo.add(new AggregateInfo(bucket.toAsString(),bucket.docCount()));
                 }
                 combined.put("lan",laninfo);
                 combined.put("type",typeinfo);
@@ -453,7 +546,7 @@ public class PaperController {
         }
         if(!searchInfo.getType().equals("")){
             searchField.add("type");
-            searchText.add(searchInfo.getType());
+            searchText.add(getKey(searchInfo.getType()));
         }
         if(!searchInfo.getIssn().equals("")){
             searchField.add("issn");
@@ -461,7 +554,7 @@ public class PaperController {
         }
         if(!searchInfo.getLanguage().equals("")){
             searchField.add("lan");
-            searchText.add(searchInfo.getLanguage());
+            searchText.add(getKey(searchInfo.getLanguage()));
         }
         Query query=getQuery(searchText,searchField,fromDate,toDate);
 
@@ -509,7 +602,7 @@ public class PaperController {
         }
         if(!searchInfo.getType().equals("")){
             searchField.add("type");
-            searchText.add(searchInfo.getType());
+            searchText.add(getKey(searchInfo.getType()));
         }
         if(!searchInfo.getIssn().equals("")){
             searchField.add("issn");
@@ -517,7 +610,7 @@ public class PaperController {
         }
         if(!searchInfo.getLanguage().equals("")){
             searchField.add("lan");
-            searchText.add(searchInfo.getLanguage());
+            searchText.add(getKey(searchInfo.getLanguage()));
         }
         Query query=getQuery(searchText,searchField,fromDate,toDate);
         try {
@@ -572,7 +665,7 @@ public class PaperController {
         }
         if(!searchInfo.getType().equals("")){
             searchField.add("type");
-            searchText.add(searchInfo.getType());
+            searchText.add(getKey(searchInfo.getType()));
         }
         if(!searchInfo.getIssn().equals("")){
             searchField.add("issn");
@@ -580,7 +673,7 @@ public class PaperController {
         }
         if(!searchInfo.getLanguage().equals("")){
             searchField.add("lan");
-            searchText.add(searchInfo.getLanguage());
+            searchText.add(getKey(searchInfo.getLanguage()));
         }
         Query query=getQuery(searchText,searchField,fromDate,toDate);
         try {
