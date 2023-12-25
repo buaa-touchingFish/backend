@@ -525,7 +525,7 @@ public class PaperController {
             SearchResponse<PaperDoc>response=client.search(builder -> builder
                     .index("papers")
                     .size(10)
-                    .from(pageNum)
+                    .from(pageNum*10)
                     .query(query)
                     .sort(s->s
                             .field(f->f
@@ -588,7 +588,7 @@ public class PaperController {
             SearchResponse<PaperDoc>response=client.search(builder -> builder
                             .index("papers")
                             .size(10)
-                            .from(pageNum)
+                            .from(pageNum*10)
                             .query(query)
                             .sort(s->s
                                     .field(f->f
