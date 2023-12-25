@@ -259,11 +259,13 @@ public class UserController {
             return Result.fail("上传失败,头像为空");
         }
         User myUser = UserContext.getUser();
-        String fileName = file.getOriginalFilename();
+        String fileName = file.getOriginalFilename()+getTimeNow();
         InputStream inputStream = file.getInputStream();
         String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
+        User newUser = user.getById(myUser.getUid());
+        newUser.setAvatar(upload);
         myUser.setAvatar(upload);
-        user.updateById(myUser);
+        user.saveOrUpdate(newUser);
         return Result.ok("上传成功",upload);
     }
 
