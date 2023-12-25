@@ -129,7 +129,7 @@ public class UserController {
 
         stringRedisTemplate.opsForValue().increment(RedisKey.LOGIN_KEY+RedisKey.getEveryDayKey(),1);
 
-        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar()));
+        return Result.ok("登录成功",new RegisterSuccess(jwtToken, myUser.getUid(),myUser.getUsername(),myUser.getEmail(),myUser.getPhone(),myUser.getAvatar(),myUser.getAuthor_id()));
 
     }
 

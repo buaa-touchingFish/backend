@@ -143,11 +143,10 @@ public class PaperController {
     }
 
     @PostMapping ("/single")
-    @LoginCheck
-    @Operation(summary = "点击获取单个文献",security = { @SecurityRequirement(name = "bearer-key") })
+    @Operation(summary = "点击获取单个文献" )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文献id号  格式:\"id\":\"文献id号\"")
     public Result<PaperInfo> getSingleWork( @RequestBody  Map<String,String> json){
-        User myUser = UserContext.getUser();
+//        User myUser = UserContext.getUser();
         ObjectMapper mapper = new ObjectMapper();
         ThreadUtil.execute(()->{
             if (paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).exists()){
@@ -166,17 +165,6 @@ public class PaperController {
             paperInfo.setBrowse(browse);
             paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
             paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
-            Collect byId = collectImpl.getById(myUser.getUid());
-            if (byId != null){
-                List<CollectInfo> collectInfos = byId.getCollectInfos();
-                List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
-                for (CollectInfo collectInfo:collectInfoList){
-                    if (collectInfo.getPaper_id().equals(json.get("id"))){
-                        paperInfo.setCollected(true);
-                        break;
-                    }
-                }
-            }
             return Result.ok("成功返回",paperInfo);
         }
         Paper paper = paperImpl.lambdaQuery().eq(Paper::getId,json.get("id")).one();
@@ -189,7 +177,6 @@ public class PaperController {
         List<String> referenced_works = paper.getReferenced_works();
         List<String> related_works = paper.getRelated_works();
 
-        Collect byId = collectImpl.getById(myUser.getUid());
 
 
         PaperInfo paperInfo = new PaperInfo();
@@ -211,16 +198,7 @@ public class PaperController {
         paperInfo.setBrowse(browse);
         paperInfo.setGood(zsetRedis.getScore(RedisKey.GOOD_CNT_KEY,json.get("id")));
         paperInfo.setCollect(zsetRedis.getScore(RedisKey.COLLECT_CNT_KEY,json.get("id")));
-        if (byId != null){
-            List<CollectInfo> collectInfos = byId.getCollectInfos();
-            List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
-            for (CollectInfo collectInfo:collectInfoList){
-                if (collectInfo.getPaper_id().equals(json.get("id"))){
-                    paperInfo.setCollected(true);
-                    break;
-                }
-            }
-        }
+
         ThreadUtil.execute(()->{
             for (String id:referenced_works){
                 Paper one = paperImpl.getPaperByAlex(id);
@@ -257,6 +235,27 @@ public class PaperController {
         String s = JSONUtil.toJsonStr(paperInfo);
         stringRedisTemplate.opsForValue().set(RedisKey.PAPER_KEY+paperInfo.getId(),s,1, TimeUnit.DAYS);
         return Result.ok("成功返回",paperInfo);
+    }
+
+    @PostMapping("/iscollect")
+    @LoginCheck
+    @Operation(summary = "是否被收藏",security = { @SecurityRequirement(name = "bearer-key") })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "paper的id \"id\":")
+    public Result<Boolean> ifCollect(@RequestBody Map<String,String> mp){
+        String id = mp.get("id");
+        ObjectMapper mapper = new ObjectMapper();
+        User myUser = UserContext.getUser();
+        Collect byId = collectImpl.getById(myUser.getUid());
+        if (byId != null){
+            List<CollectInfo> collectInfos = byId.getCollectInfos();
+            List<CollectInfo> collectInfoList = mapper.convertValue(collectInfos,new TypeReference<>() {});
+            for (CollectInfo collectInfo:collectInfoList){
+                if (collectInfo.getPaper_id().equals(id)){
+                    return Result.ok("成功返回",true);
+                }
+            }
+        }
+        return Result.ok("成功返回",false);
     }
 
     @PostMapping("/search")

@@ -12,4 +12,5 @@ public class RegisterSuccess {
     private String email;
     private String phone;
     private String avatar;
+    private String  author_id;
 }
