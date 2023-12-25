@@ -288,7 +288,7 @@ public class PaperController {
         }
         Query query=getQuery(searchText,searchField);
         try {
-            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum*10).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
             for(Hit<PaperDoc>hit:response.hits().hits()){
                 papers.add(new Paper(hit.source()));
@@ -390,10 +390,6 @@ public class PaperController {
                 List<RangeBucket> date = searchresponse.aggregations().get("date").dateRange().buckets().array();
                 JSONObject combined=new JSONObject();
                 combined.put("sum",count);
-                /*combined.put("lan",new JSONObject());
-                combined.put("type",new JSONObject());
-                combined.put("publisher",new JSONObject());
-                combined.put("date",new JSONObject());*/
                 List<AggregateInfo>laninfo=new ArrayList<>();
                 List<AggregateInfo>typeinfo=new ArrayList<>();
                 List<AggregateInfo>publisherinfo=new ArrayList<>();
@@ -471,7 +467,7 @@ public class PaperController {
         Query query=getQuery(searchText,searchField,fromDate,toDate);
 
         try {
-            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum).query(query),PaperDoc.class);
+            SearchResponse<PaperDoc>response=client.search(builder -> builder.index("papers").size(10).from(pageNum*10).query(query),PaperDoc.class);
             List<Paper> papers=new ArrayList<>();
             for(Hit<PaperDoc>hit:response.hits().hits()){
                 papers.add(new Paper(hit.source()));
