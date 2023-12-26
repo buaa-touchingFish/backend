@@ -60,7 +60,6 @@ public class AuthorController {
         Author author = authorService.getById(author_id);
         if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
-        AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
         boolean isPaperExist = false;
         if (authorPaper != null) {
@@ -75,8 +74,13 @@ public class AuthorController {
             authorPaperService.saveAuthorPaper(author_id, paper_id);
             authorPaper = authorPaperService.getById(author_id);
         }
+        AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         if (authorPaper == null)
         {
+            Author author1 = authorHome.getAuthor();
+            if(author1.getClaim_uid()==null)
+                author1.setClaim_uid(0);
+            authorHome.setAuthor(author1);
             String s = JSONUtil.toJsonStr(authorHome);
             stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
             return Result.ok("查看学者门户成功", authorHome);
@@ -129,6 +133,8 @@ public class AuthorController {
             if (author1.getLast_known_institution() != null)
                 coAuthor.setLast_known_institution_display_name(author1.getLast_known_institution().getDisplay_name());
         }
+        if(author.getClaim_uid()==null)
+            author.setClaim_uid(0);
         authorHome = new AuthorHome(author, papers, returnCoAuthors);
         String s = JSONUtil.toJsonStr(authorHome);
         stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
