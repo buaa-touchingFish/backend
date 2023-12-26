@@ -60,10 +60,22 @@ public class AuthorController {
         Author author = authorService.getById(author_id);
         if (author == null)
             author = getAuthorFromOpenAlex(author_id, paper_id);
-        System.out.println(author.getClaim_uid());
         AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
-        if(authorPaper == null && paper_id != null)
+        boolean isPaperExist = false;
+        if(authorPaper!=null)
+        {
+            for(String author_paper_id : authorPaper.getPapers())
+            {
+                if(author_paper_id.equals(paper_id))
+                {
+                    isPaperExist = true;
+                    break;
+                }
+            }
+        }
+        System.out.println();
+        if((authorPaper == null || !isPaperExist) && paper_id != null)
         {
             authorPaperService.saveAuthorPaper(author_id, paper_id);
             authorPaper = authorPaperService.getById(author_id);
