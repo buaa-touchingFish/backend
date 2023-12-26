@@ -482,14 +482,14 @@ public class PaperController {
                                                         to(FieldDateMath.of(f -> f.expr("now")))))),
                         Void.class
                 );
-                long count = client.count(c -> c.index("papers").query(query)).count();
+                //long count = client.count(c -> c.index("papers").query(query)).count();
                 List<StringTermsBucket> lan = searchresponse.aggregations()
                         .get("lan").sterms().buckets().array();
                 List<StringTermsBucket> type = searchresponse.aggregations().get("type").sterms().buckets().array();
                 List<StringTermsBucket> publisherBucket = searchresponse.aggregations().get("publisher").sterms().buckets().array();
                 List<RangeBucket> date = searchresponse.aggregations().get("date").dateRange().buckets().array();
                 JSONObject combined=new JSONObject();
-                combined.put("sum",count);
+                //combined.put("sum",count);
                 List<AggregateInfo>laninfo=new ArrayList<>();
                 List<AggregateInfo>typeinfo=new ArrayList<>();
                 List<AggregateInfo>publisherinfo=new ArrayList<>();
@@ -531,6 +531,58 @@ public class PaperController {
             }
         }
         return Result.ok("");
+    }
+    @PostMapping("/sum")
+    @Operation(summary = "获取总数")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "")
+    public Result<JSONObject>getSum(@RequestBody SearchInfo searchInfo){
+        final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
+        String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
+        String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
+        if (!searchInfo.getKeyword().equals("")) {
+            searchField.add("information");
+            searchText.add(searchInfo.getKeyword());
+        }
+        if (!searchInfo.getAuthor().equals("")) {
+            searchField.add("authorships");
+            searchText.add(searchInfo.getAuthor());
+        }
+        if (!searchInfo.getInstitution().equals("")) {
+            searchField.add("authorships");
+            if(!searchInfo.getAuthor().equals("")) {
+                searchText.remove(searchText.size() - 1);
+                searchText.add(searchInfo.getAuthor()+" "+searchInfo.getInstitution());
+            }
+            else
+                searchText.add(searchInfo.getInstitution());
+        }
+        if (!searchInfo.getPublisher().equals("")) {
+            searchField.add("publishers");
+            searchText.add(searchInfo.getPublisher());
+        }
+        if(!searchInfo.getType().equals("")){
+            searchField.add("type");
+            searchText.add(getKey(searchInfo.getType()));
+        }
+        if(!searchInfo.getIssn().equals("")){
+            searchField.add("issn");
+            searchText.add(searchInfo.getIssn());
+        }
+        if(!searchInfo.getLanguage().equals("")){
+            searchField.add("lan");
+            searchText.add(getKey(searchInfo.getLanguage()));
+        }
+        Query query=getQuery(searchText,searchField,fromDate,toDate);
+        try {
+            long count = client.count(c -> c.index("papers").query(query)).count();
+            JSONObject combined=new JSONObject();
+            combined.put("sum",count);
+            return Result.ok("查询成功",combined);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Result.fail("查询失败");
     }
 
     //关键词作者刊物日期机构
