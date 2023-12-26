@@ -254,16 +254,19 @@ public class UserController {
         String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
         ClaimRequest claimRequest = new ClaimRequest(now_user.getUid(),getTimeNow(),id,upload);
         boolean save = true;
-        if (!claimRequestImpl.lambdaQuery().eq(ClaimRequest::getAuthor_id,id).eq(ClaimRequest::getApplicant_id,now_user.getUid()).exists()){
+        if (claimRequestImpl.lambdaQuery().eq(ClaimRequest::getAuthor_id,id).eq(ClaimRequest::getApplicant_id,now_user.getUid()).eq(ClaimRequest::getStatus,0).exists()){
+            return  Result.fail("您之前的申请尚未处理");
+        }else{
             save = claimRequestImpl.save(claimRequest);
+            //作者表要更新
+            if (save){
+                return Result.ok("等待管理员审核");
+            }else{
+                return Result.fail("网络错误，请稍后再试");
+            }
         }
        
-        //作者表要更新
-        if (save){
-            return Result.ok("等待管理员审核");
-        }else{
-            return Result.fail("网络错误，请稍后再试");
-        }
+
     }
 
 
