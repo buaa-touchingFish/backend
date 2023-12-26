@@ -1,46 +1,32 @@
 package com.touchfish.Controller;
 
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.qiniu.util.Auth;
-import com.touchfish.Dao.AuthorMapper;
 import com.touchfish.Dto.*;
-import com.touchfish.Po.Author;
-import com.touchfish.Po.Paper;
-import com.touchfish.Po.PaperAppeal;
-import com.touchfish.Po.User;
-import com.touchfish.Service.impl.AuthorImpl;
-import com.touchfish.Service.impl.PaperAppealImpl;
-import com.touchfish.Service.impl.PaperImpl;
-import com.touchfish.Po.ClaimRequest;
-import com.touchfish.Po.User;
-import com.touchfish.Service.impl.AuthorImpl;
-import com.touchfish.Service.impl.ClaimRequestImpl;
-import com.touchfish.Service.impl.UserImpl;
+import com.touchfish.Po.*;
+import com.touchfish.Service.impl.*;
 import com.touchfish.Tool.*;
-import io.lettuce.core.ScriptOutputType;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.cassandra.CassandraProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -65,6 +51,14 @@ public class UserController {
     private ClaimRequestImpl claimRequestImpl;
     @Autowired
     private QiNiuOssUtil qiNiuOssUtil;
+
+
+
+
+    private static String parsePwd(String pwd) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException {
+        return RSAUtils.decryptByPrivateKey(pwd);
+    }
+    
 
     private static String getTimeNow(){
         Date date = new Date();
@@ -110,7 +104,7 @@ public class UserController {
     @PostMapping("/register")
     @Operation(summary = "注册")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户名 密码 邮箱 验证码")
-    public Result<String> registerConfirm(@RequestBody RegisterInfo registerInfo){ //完成注册
+    public Result<String> registerConfirm(@RequestBody RegisterInfo registerInfo) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException { //完成注册
         if (user.lambdaQuery().eq(User::getEmail,registerInfo.getEmail()).count()>0){
             return Result.fail("邮箱已存在");
         }
@@ -122,7 +116,7 @@ public class UserController {
         if (!captcha.equals(registerInfo.getCaptcha())){
             return Result.fail("验证码错误");
         }
-        User newUser = new User(registerInfo.getUsername(),registerInfo.getPassword(),registerInfo.getEmail(),null);
+        User newUser = new User(registerInfo.getUsername(),parsePwd(registerInfo.getPassword()),registerInfo.getEmail(),null);
 
         user.save(newUser);
         return Result.ok("注册成功");
@@ -131,12 +125,12 @@ public class UserController {
     @PostMapping("/login")
     @Operation(summary = "登录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户名 密码")
-    public Result<RegisterSuccess> login(@RequestBody LoginInfo loginInfo){
+    public Result<RegisterSuccess> login(@RequestBody LoginInfo loginInfo) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException {
         if (!user.lambdaQuery().eq(User::getUsername,loginInfo.getUsername()).exists()){
             return Result.fail("用户名不存在");
         }
         User myUser = user.lambdaQuery().eq(User::getUsername,loginInfo.getUsername()).one();
-        if (!myUser.getPassword().equals(loginInfo.getPassword())){
+        if (!myUser.getPassword().equals(parsePwd(loginInfo.getPassword()))){
             return Result.fail("密码错误");
         }
         String name = myUser.getUsername();
@@ -177,16 +171,16 @@ public class UserController {
     @PostMapping("/changepwd")
     @Operation(summary = "找回密码验证码确认")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "邮箱 新密码 验证码")
-    public Result<String> changePwd( @RequestBody PwdChangeInfo pwdChangeInfo){
+    public Result<String> changePwd( @RequestBody PwdChangeInfo pwdChangeInfo) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException {
         String captcha = stringRedisTemplate.opsForValue().get(RedisKey.CATPTCHA_KEY+pwdChangeInfo.getEmail());
         if (StrUtil.isEmpty(captcha)){
-           return Result.fail("验证码已失效");
+            return Result.fail("验证码已失效");
         }
         if (!captcha.equals(pwdChangeInfo.getCaptcha())){
             return Result.fail("验证码错误");
         }
 
-        boolean update = user.lambdaUpdate().eq(User::getEmail, pwdChangeInfo.getEmail()).set(User::getPassword, pwdChangeInfo.getNew_pwd()).update();
+        boolean update = user.lambdaUpdate().eq(User::getEmail, pwdChangeInfo.getEmail()).set(User::getPassword, parsePwd(pwdChangeInfo.getNew_pwd())).update();
         if (update)  return Result.ok("成功修改密码");
         else return Result.fail("修改密码失败");
     }
@@ -195,9 +189,9 @@ public class UserController {
     @LoginCheck
     @Operation(summary = "修改密码",security = { @SecurityRequirement(name = "bearer-key") })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "\"oldpwd\": ,\"newpwd:\"")
-    public Result<String> changePwd1(@RequestBody Map<String,String> mp){
-        String oldPwd = mp.get("oldpwd");
-        String newPwd = mp.get("newpwd");
+    public Result<String> changePwd1(@RequestBody Map<String,String> mp) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException {
+        String oldPwd = parsePwd(mp.get("oldpwd"));
+        String newPwd = parsePwd(mp.get("newpwd"));
         User myUser = UserContext.getUser();
         User newUser = user.lambdaQuery().eq(User::getUid,myUser.getUid()).one();
         if (newUser.getPassword().equals(oldPwd)){
@@ -254,7 +248,7 @@ public class UserController {
         String upload = qiNiuOssUtil.upload(inputStream, fileName);//upload为返回的图片外链地址
         ClaimRequest claimRequest = new ClaimRequest(now_user.getUid(),getTimeNow(),id,upload);
         boolean save = true;
-        if (claimRequestImpl.lambdaQuery().eq(ClaimRequest::getAuthor_id,id).eq(ClaimRequest::getApplicant_id,now_user.getUid()).eq(ClaimRequest::getStatus,0).exists()){
+        if (claimRequestImpl.lambdaQuery().eq(ClaimRequest::getApplicant_id,now_user.getUid()).eq(ClaimRequest::getStatus,0).exists()){
             return  Result.fail("您之前的申请尚未处理");
         }else{
             save = claimRequestImpl.save(claimRequest);
@@ -265,7 +259,7 @@ public class UserController {
                 return Result.fail("网络错误，请稍后再试");
             }
         }
-       
+
 
     }
 
@@ -325,8 +319,8 @@ public class UserController {
         }
 
         PaperAppeal existAppeal = paperAppeal.lambdaQuery().ne(PaperAppeal::getStatus, -1)
-                        .eq(PaperAppeal::getPaper_id, appealInfo.getPaper_id())
-                        .eq(PaperAppeal::getApplicant_id, UserContext.getUser().getUid()).one();
+                .eq(PaperAppeal::getPaper_id, appealInfo.getPaper_id())
+                .eq(PaperAppeal::getApplicant_id, UserContext.getUser().getUid()).one();
 
         if(existAppeal != null){
             if(existAppeal.getStatus() == 0)
