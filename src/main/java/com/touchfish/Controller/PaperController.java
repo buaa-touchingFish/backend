@@ -1,6 +1,7 @@
 package com.touchfish.Controller;
 
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.aggregations.*;
@@ -327,10 +328,10 @@ public class PaperController {
         if (paper1 == null){
             return  Result.fail("文章不存在");
         }else{
-            String url = null;
-            if (paper1.getOa_url()!=null){
+            String url = "no";
+            if (!StrUtil.isEmpty(paper1.getOa_url())){
                 url = paper1.getOa_url();
-            }else if (paper1.getDoi() != null){
+            }else if (!StrUtil.isEmpty(paper1.getDoi())){
                 url = paper1.getDoi();
             }
             return Result.ok("成功返回",url);

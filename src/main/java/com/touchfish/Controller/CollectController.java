@@ -50,7 +50,7 @@ public class CollectController {
             zsetRedis.setTTL(RedisKey.COLLECT_CNT_KEY + RedisKey.getEveryDayKey(), 2l, TimeUnit.DAYS);
             return Result.ok("收藏成功");
         } else
-            return Result.fail("已收藏");
+            return Result.fail("该论文已被收藏");
     }
 
     @PostMapping("/delete")

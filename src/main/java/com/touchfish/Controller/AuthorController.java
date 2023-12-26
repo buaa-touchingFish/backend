@@ -62,14 +62,27 @@ public class AuthorController {
             author = getAuthorFromOpenAlex(author_id, paper_id);
         AuthorHome authorHome = new AuthorHome(author, new ArrayList<>(), new ArrayList<>());
         AuthorPaper authorPaper = authorPaperService.getById(author_id);
-        if(authorPaper == null && paper_id != null)
-        {
+        boolean isPaperExist = false;
+        if (authorPaper != null) {
+            for (String author_paper_id : authorPaper.getPapers()) {
+                if (author_paper_id.equals(paper_id)) {
+                    isPaperExist = true;
+                    break;
+                }
+            }
+        }
+        if ((authorPaper == null || !isPaperExist) && paper_id != null) {
             authorPaperService.saveAuthorPaper(author_id, paper_id);
             authorPaper = authorPaperService.getById(author_id);
         }
-        if(authorPaper == null)
+        if (authorPaper == null)
+        {
+            String s = JSONUtil.toJsonStr(authorHome);
+            stringRedisTemplate.opsForValue().set(RedisKey.AUTHOR_KEY + authorHome.getAuthor().getId(), s, 1, TimeUnit.DAYS);
             return Result.ok("查看学者门户成功", authorHome);
+        }
         for (String author_paper_id : authorPaper.getPapers()) {
+            if (author_paper_id.equals("")) continue;
             Paper paper = paperService.getById(author_paper_id);
             papers.add(paper);
             List<AuthorShip> authorships = paper.getAuthorships();
@@ -135,24 +148,22 @@ public class AuthorController {
 
     @GetMapping("/count")
     @Operation(summary = "获取学者总数")
-    public Result<Integer> getCount(){
-        return Result.ok("成功返回",2325000);
+    public Result<Integer> getCount() {
+        return Result.ok("成功返回", 2325000);
     }
 
     @GetMapping("/subscribe")
     @LoginCheck
     @Operation(summary = "是否订阅", security = {@SecurityRequirement(name = "bearer-key")})
-    public Result<Boolean> getSubscribeStatus(String author_id)
-    {
+    public Result<Boolean> getSubscribeStatus(String author_id) {
         User user = UserContext.getUser();
         Subscribe subscribe = subscribeService.getById(user.getUid());
         ArrayList<String> authorIds = subscribe.getAuthor_id();
         authorIds = new ObjectMapper().convertValue(authorIds, new TypeReference<>() {
         });
         boolean flag = false;
-        for(String authorId:authorIds)
-        {
-            if(authorId.equals(author_id)){
+        for (String authorId : authorIds) {
+            if (authorId.equals(author_id)) {
                 flag = true;
                 break;
             }
