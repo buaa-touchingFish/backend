@@ -1,21 +1,12 @@
 package com.touchfish.Service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.touchfish.Dao.ElasticSearchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.touchfish.Dao.PaperMapper;
 import com.touchfish.MiddleClass.AuthorShip;
 import com.touchfish.MiddleClass.DisplayInfo;
 import com.touchfish.Po.Paper;
-import com.touchfish.Po.PaperDoc;
 import com.touchfish.Service.IPaper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 import com.touchfish.Tool.OpenAlex;
 import org.springframework.stereotype.Service;
 
@@ -37,11 +28,11 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
         paper.setId(findId(jsonNode.get("id").asText()));
         if (jsonNode.get("doi")!=null){
             String doi = jsonNode.get("doi").asText();
-            paper.setDoi(doi.substring(0,Math.min(127,doi.length()-1)));
+            paper.setDoi(doi.substring(0,Math.min(127,doi.length())));
         }
         if (jsonNode.get("oa_url")!=null){
             String oa_url = jsonNode.get("oa_url").asText();
-            paper.setOa_url(oa_url.substring(0,Math.min(255,oa_url.length()-1)));
+            paper.setOa_url(oa_url.substring(0,Math.min(255,oa_url.length())));
         }
         if (jsonNode.get("type")!=null){
             paper.setType(jsonNode.get("type").asText());
@@ -69,7 +60,7 @@ public class PaperImpl extends ServiceImpl<PaperMapper, Paper> implements IPaper
 
         if (jsonNode.get("title")!=null){
             String s = jsonNode.get("title").asText();
-            paper.setTitle(s.substring(0,Math.min(s.length()-1,255)));
+            paper.setTitle(s.substring(0,Math.min(s.length(),256)));
         }
         return paper;
     }

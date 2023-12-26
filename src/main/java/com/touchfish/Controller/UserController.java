@@ -58,7 +58,7 @@ public class UserController {
     private static String parsePwd(String pwd) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeySpecException, InvalidKeyException {
         return RSAUtils.decryptByPrivateKey(pwd);
     }
-    
+
 
     private static String getTimeNow(){
         Date date = new Date();
