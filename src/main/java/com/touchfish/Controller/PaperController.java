@@ -437,8 +437,20 @@ public class PaperController {
         final int pageNum = Math.max(searchInfo.getPageNum(), 0);
         final List<String> searchText = new ArrayList<>(), searchField = new ArrayList<>();
         if (!searchInfo.getKeyword().equals("")) {
-            searchField.add("information");
-            searchText.add(searchInfo.getKeyword());
+            if(searchInfo.getKeyword().charAt(0)=='@') {
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
+            else if(searchInfo.getKeyword().charAt(searchInfo.getKeyword().length()-1)=='@'){
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0,searchInfo.getKeyword().length()));
+            }
+            else {
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0, searchInfo.getKeyword().lastIndexOf("@")));
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
         }
         if (!searchInfo.getAuthor().equals("")) {
             searchField.add("authorships");
@@ -541,8 +553,20 @@ public class PaperController {
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
         String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
-            searchField.add("information");
-            searchText.add(searchInfo.getKeyword());
+            if(searchInfo.getKeyword().charAt(0)=='@') {
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
+            else if(searchInfo.getKeyword().charAt(searchInfo.getKeyword().length()-1)=='@'){
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0,searchInfo.getKeyword().length()));
+            }
+            else {
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0, searchInfo.getKeyword().lastIndexOf("@")));
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
         }
         if (!searchInfo.getAuthor().equals("")) {
             searchField.add("authorships");
@@ -596,8 +620,20 @@ public class PaperController {
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
         String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
-            searchField.add("information");
-            searchText.add(searchInfo.getKeyword());
+            if(searchInfo.getKeyword().charAt(0)=='@') {
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
+            else if(searchInfo.getKeyword().charAt(searchInfo.getKeyword().length()-1)=='@'){
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0,searchInfo.getKeyword().length()));
+            }
+            else {
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0, searchInfo.getKeyword().lastIndexOf("@")));
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")+1));
+            }
         }
         if (!searchInfo.getAuthor().equals("")) {
             searchField.add("authorships");
@@ -652,8 +688,20 @@ public class PaperController {
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
         String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
-            searchField.add("information");
-            searchText.add(searchInfo.getKeyword());
+            if(searchInfo.getKeyword().charAt(0)=='@') {
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
+            else if(searchInfo.getKeyword().charAt(searchInfo.getKeyword().length()-1)=='@'){
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0,searchInfo.getKeyword().length()));
+            }
+            else {
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0, searchInfo.getKeyword().lastIndexOf("@")));
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
         }
         if (!searchInfo.getAuthor().equals("")) {
             searchField.add("authorships");
@@ -715,8 +763,20 @@ public class PaperController {
         String fromDate=searchInfo.getFrom_date().equals("") ? null : searchInfo.getFrom_date();
         String toDate=searchInfo.getTo_date().equals("")? "now" : searchInfo.getTo_date();
         if (!searchInfo.getKeyword().equals("")) {
-            searchField.add("information");
-            searchText.add(searchInfo.getKeyword());
+            if(searchInfo.getKeyword().charAt(0)=='@') {
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
+            else if(searchInfo.getKeyword().charAt(searchInfo.getKeyword().length()-1)=='@'){
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0,searchInfo.getKeyword().length()));
+            }
+            else {
+                searchField.add("information");
+                searchText.add(searchInfo.getKeyword().substring(0, searchInfo.getKeyword().lastIndexOf("@")));
+                searchField.add("keywords");
+                searchText.add(searchInfo.getKeyword().substring(searchInfo.getKeyword().lastIndexOf("@")));
+            }
         }
         if (!searchInfo.getAuthor().equals("")) {
             searchField.add("authorships");
